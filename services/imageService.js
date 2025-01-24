@@ -20,7 +20,54 @@ export const getSupabaseFileUrl = filePath =>{
     return null;
 }
 
+// export const downloadFile=async(url)=>{
+//     try{
+//         const {uri}=await FileSystem.downloadAsync(url,getLocalFilePath(url))
+//         if (uri) {
+//             console.log("File downloaded successfully to:", uri);
+//             return uri;
+//           } else {
+//             console.error("File download failed, no URI returned.");
+//             return null;
+//           }
+//     }catch(error){
+//         return null;
+//     }
+// }
 
+export const downloadFile = async (fileUrl) => {
+    try {
+      // Ensure the file URL is valid
+      if (!fileUrl) {
+        console.error("Invalid file URL");
+        return null;
+      }
+  
+      // Generate a local file path using the file's name
+      const localFilePath = getLocalFilePath(fileUrl);
+      console.log("Downloading file to:", localFilePath);
+  
+      // Download the file and get its local URI
+      const { uri } = await FileSystem.downloadAsync(fileUrl, localFilePath);
+  
+      // Check if the download was successful
+      if (uri) {
+        console.log("File downloaded successfully to:", uri);
+        return uri;
+      } else {
+        console.error("File download failed, no URI returned.");
+        return null;
+      }
+    } catch (error) {
+      console.error("Error downloading file:", error.message);
+      return null;
+    }
+  };
+  
+export const getLocalFilePath=filePath=>{
+    let fileName=filePath.split('/').pop();
+    return `${FileSystem.documentDirectory}${fileName}`;
+}
 
 export const uploadFile = async (folderName,fileUri,isImage=true)=>{
     try{

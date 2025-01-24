@@ -1,1 +1,1 @@
-# Galuxium
+# Galuxium-Social-Networking-App

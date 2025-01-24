@@ -4,7 +4,7 @@
     "slug": "Galuxium",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/logo.png",
+    "icon": "./assets/images/logo2.png",
     "scheme": "Galuxium",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -13,24 +13,27 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/logo.png",
-        "backgroundColor": "#ffffff"
-      }
+        "foregroundImage": "./assets/images/logo2.png",
+        "backgroundColor": "#000000"
+      },
+      "permissions": [],
+      "package": "com.aadityasalgaonkar.Galuxium"
     },
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/logo.png"
+      "favicon": "./assets/images/logo2.png"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
-        {
-          "image": "./assets/images/logo.png",
+        {  
+          "backgroundColor": "#000000",
+          "image": "./assets/images/logo2.png",
           "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
+          "resizeMode": "contain"
+          
         }
       ],
       "react-native-video",
@@ -38,6 +41,14 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "8cc253bb-4938-4c7c-af4b-9bbe36fda18b"
+      }
     }
   }
 }

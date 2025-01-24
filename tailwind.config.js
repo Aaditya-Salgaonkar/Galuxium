@@ -44,7 +44,7 @@ module.exports = {
 
         // Accent Colors - Decorative & Interactive Items
         accent: {
-          100: "#dabdff", // Soft Purple - Hover and active effects for buttons, links
+          100: "#f0e1fc", // Soft Purple - Hover and active effects for buttons, links
           200: "#FFC300", // Bright Yellow - Call-to-action highlights
         },
 
