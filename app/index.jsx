@@ -2,7 +2,7 @@ import { View, Text,Button, TouchableOpacity, ActivityIndicator } from 'react-na
 import React from 'react'
 import { useRouter } from 'expo-router'
 import ScreenWrapper from '../components/ScreenWrapper'
-import Loading from '@/components/Loading'
+import Loading from '../components/Loading'
 
 
 const index = () => {

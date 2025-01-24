@@ -61,13 +61,15 @@ const TabsLayout = () => {
         }}
       />
 
-<Tabs.Screen
-        name="notification"
+      <Tabs.Screen
+        name="postScreen"
         options={{
-          title: "notification",
+          title: "Plus",
           headerShown: false,
           tabBarIcon: ({ focused }) => (
-            <TabIcon name="notification" focused={focused} />
+            <View>
+              <TabIcon name="plus" focused={focused} />
+            </View>
           ),
         }}
       />

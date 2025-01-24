@@ -24,19 +24,24 @@ import Camera from './Camera';
 import Notification from './Notification';
 import Chat from './Chat';
 import Bio from './Bio'
-
+import ArrowRight from './ArrowRight';
+import About from './About';
+import Favourites from './Favourites'
 const icons = {
   home:Home,
   mail: Mail,
   lock: Lock,
   user: User,
   heart: Heart,
+  arrowright:ArrowRight,
   plus: Plus,
   search: Search,
   location: Location,
   call: Call,
   camera: Camera,
   edit: Edit,
+  about:About,
+  favourites:Favourites,
   arrowLeft: ArrowLeft,
   threeDotsCircle: ThreeDotsCircle,
   threeDotsHorizontal: ThreeDotsHorizontal,

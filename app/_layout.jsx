@@ -1,10 +1,10 @@
-import { View, Text,LogBox } from 'react-native'
+import { View, Text,LogBox,Dimensions,StyleSheet } from 'react-native'
 import React, { useEffect } from 'react'
 import { Stack, useRouter } from 'expo-router'
 import './styles/globals.css'
 import { useFonts } from "expo-font";
 import {AuthProvider,useAuth} from '../context/AuthContext';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '../lib/supabase';
 import {getUserData} from '../services/userService'
 
 LogBox.ignoreLogs(['Warning: TNodeChildrenRenderer','Warning: MemoizedTNodeRenderer','Warning: TRenderEngineProvider'])
@@ -61,9 +61,20 @@ const MainLayout = () => {
   return (
     <Stack 
     screenOptions={{
-      headerShown:false
+      headerShown:false,
+      presentation: 'modal', 
+    }}>
+
+
+<Stack.Screen
+    name="pages/screens/postDetails"
+    options={{
+      presentation:'modal',
+      headerShown: false,
+      cardStyle: { height: Dimensions.get('window').height * 0.75, padding: 20 },
     }}
     />
+    </Stack>
   )
 }
 

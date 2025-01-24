@@ -160,7 +160,7 @@ const Edit = () => {
                           </View>
                           </View>
                           <View className="flex flex-row gap-4">
-                            <TouchableOpacity>
+                            <TouchableOpacity onPress={()=>router.push('/screens/menu')}>
                               <Icon name="threeDotsHorizontal" size={hp(4)} />
                             </TouchableOpacity>
                             

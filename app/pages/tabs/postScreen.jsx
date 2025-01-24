@@ -119,9 +119,9 @@ console.log('Post',post)
       <StatusBar />
       {/* Header */}
       <View className="flex-1 bg-primary-50 px-5">
-        <View className="flex -ml-3 flex-row justify-between items-center">
+        <View className="flex mt-4 ml-3 flex-row justify-between items-center">
           <View className="flex">
-            <BackButton router={router} />
+            {/* <BackButton router={router} /> */}
           </View>
           <View className="flex-1">
             <Text className="font-rubik-bold text-3xl">{post && post.id?"Update Post":"Create Post"}</Text>

@@ -5,6 +5,8 @@ import {
   StyleSheet,
   TextInput,
   Image,
+  Platform,
+  ScrollView
 } from "react-native";
 import React, { useRef, useState } from "react";
 import ScreenWrapper from "../../components/ScreenWrapper";
@@ -17,7 +19,7 @@ import Icon from "../../assets/icons";
 import Backbtn from "../../components/BackButton";
 import { Alert } from "react-native";
 import {supabase} from '../../lib/supabase'
-
+import { KeyboardAvoidingView } from "react-native";
 const Login = () => {
   const router = useRouter();
   const emailRef = useRef();
@@ -59,8 +61,20 @@ const Login = () => {
   return (
     <ScreenWrapper>
       <StatusBar style="dark" />
-
-      <View className="bg-primary-50 flex-1">
+      <KeyboardAvoidingView
+              behavior={Platform.OS === "ios" ? "padding" : "height"}
+              style={{ flex: 1 }}
+            >
+              <ScrollView
+                contentContainerStyle={{
+                  flexGrow: 1,
+                  paddingHorizontal: wp(5),
+                }}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+                className="bg-primary-50"
+              >
+                <View className="bg-primary-50 flex-1">
         <Backbtn router={router} />
         <View className="flex text-left">
           <Text className="font-rubik-bold text-4xl pl-7">Hey</Text>
@@ -106,13 +120,17 @@ const Login = () => {
             onPress={onSubmit}
           />
         </View>
-        <View className="flex top-40 flex-row gap-2 items-center p-32 -mt-5">
+        <View className="flex-1 justify-center top-32 flex-row gap-2 items-center p-32 -mt-5">
           <Text className="font-rubik-medium">New to Galuxium!</Text>
           <TouchableOpacity onPress={() => router.push("/pages/signup")}>
             <Text className="font-rubik-bold text-primary-100">Sign Up</Text>
           </TouchableOpacity>
         </View>
       </View>
+              </ScrollView>
+            </KeyboardAvoidingView>
+
+      
     </ScreenWrapper>
   );
 };

@@ -5,6 +5,8 @@ import {
   StyleSheet,
   TextInput,
   Image,
+  Platform,
+  ScrollView
 } from "react-native";
 import React from "react";
 import ScreenWrapper from "../../components/ScreenWrapper";
@@ -18,7 +20,7 @@ import { useState } from "react";
 import Icon from "../../assets/icons";
 import Backbtn from "../../components/BackButton";
 import { StatusBar } from "expo-status-bar";
-
+import { KeyboardAvoidingView } from "react-native";
 import {supabase} from '../../lib/supabase'
 
 const SignUp = () => {
@@ -71,8 +73,20 @@ const SignUp = () => {
   return (
     <ScreenWrapper>
       <StatusBar style="dark" />
-
-      <View className="bg-primary-50 flex-1">
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+      >
+        <ScrollView
+          contentContainerStyle={{
+            flexGrow: 1,
+            paddingHorizontal: wp(5),
+          }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          className="bg-primary-50"
+        >
+          <View className="bg-primary-50 flex-1 mb-10">
         <Backbtn router={router} />
         <View className="flex text-left">
           <Text className="font-rubik-bold text-4xl pl-7">Let's</Text>
@@ -132,7 +146,7 @@ const SignUp = () => {
             />
            
           </View>
-          <View className="flex top-44 flex-row gap-2 items-center p-24 mt-3">
+          <View className="flex-1 justify-center top-32 flex-row gap-2 items-center p-24 mt-3">
           <Text className="font-rubik-medium">Already have an account!</Text>
           <TouchableOpacity onPress={() => router.push("/pages/login")}>
             <Text className="font-rubik-bold text-primary-100">Log In</Text>
@@ -140,6 +154,10 @@ const SignUp = () => {
         </View>
         
       </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+
+      
     </ScreenWrapper>
   );
 };

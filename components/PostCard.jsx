@@ -1,82 +1,47 @@
-import { View, Text, ScrollView, TouchableOpacity } from "react-native";
-import React from "react";
-import { hp, wp } from "../helpers/common";
+import { View, Text, ScrollView, TouchableOpacity, Alert } from "react-native";
+import React, { useState, useEffect } from "react";
+import { hp, wp, stripHtmlTags } from "../helpers/common";
 import Avatar from "./Avatar";
 import moment from "moment";
 import Icon from "../assets/icons";
 import RenderHtml from "react-native-render-html";
-import { getSupabaseFileUrl } from "../services/imageService";
+import { downloadFile, getSupabaseFileUrl } from "../services/imageService";
 import { Image } from "expo-image";
 import { Video } from "expo-av";
+import { Share } from "react-native";
+import { createPostLike, removePostLike } from "../services/postService";
+import Loading from "./Loading";
 const textStyle = {
   color: "#494949",
-  fontSize: hp(5),
-  fontFamily: 'rubik-bold'
+  fontSize: hp(2),
+  fontFamily: "rubik-regular",
 };
+const tagsStyle={
+  div:textStyle,
+  p:textStyle,
+  ol:textStyle,
+  h1:{
+    color:'black'
+  },
+  h4:{
+    color:'black'
+  }
+}
 
-const tagsStyle = {
-  div: textStyle,
-  p: {
-    ...textStyle,
-    fontWeight: 'bold', 
-  },
-  ol: {
-    ...textStyle,
-    fontWeight: 'bold',
-  },
-  ul: {
-    ...textStyle,
-    fontWeight: 'bold', 
-  },
-  li: {
-    ...textStyle,
-    fontWeight: 'bold', 
-  },
-  h1: {
-    color: "#494949",
-    fontSize: hp(7), 
-    fontWeight: 'bold',
-  },
-  h2: {
-    color: "#494949",
-    fontSize: hp(6), 
-    fontWeight: 'bold', 
-  },
-  h3: {
-    color: "#494949",
-    fontSize: hp(5.5), 
-    fontWeight: 'bold',
-  },
-  h4: {
-    color: "#494949",
-    fontSize: hp(5), 
-    fontWeight: 'bold', 
-  },
-  h5: {
-    color: "#494949",
-    fontSize: hp(5), 
-    fontWeight: 'bold', 
-  },
-  h6: {
-    color: "#494949",
-    fontSize: hp(5), 
-    fontWeight: 'bold', 
-  },
-  blockquote: {
-    fontStyle: 'italic', 
-    color: "#494949",
-    fontWeight: 'bold', 
-  },
-  strong: {
-    fontWeight: 'bold', 
-  },
-  em: {
-    fontStyle: 'italic', 
-    fontWeight: 'bold', 
-  },
-};
 
-const PostCard = ({ item, currentUser, router, hasShadow = true }) => {
+
+
+
+const PostCard = ({
+  item,
+  currentUser,
+  router,
+  hasShadow = true,
+  showMoreIcon = true,
+  showDelete = false,
+  onDelete = () => {},
+  onEdit = () => {},
+}) => {
   const shadowStyle = {
     shadowColor: "black",
     shadowOffset: { width: 0, height: 2 },
@@ -85,12 +50,99 @@ const PostCard = ({ item, currentUser, router, hasShadow = true }) => {
     elevation: 7,
   };
 
-  const openPostDetails = async () => {};
+  const [likes, setLikes] = useState([]);
+  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    setLikes(item?.postLikes);
+  }, []);
+  const openPostDetails = async () => {
+    if (!showMoreIcon) return null;
+    router.push({
+      pathname: "pages/screens/postDetails",
+      params: { postId: item?.id },
+    });
+  };
 
+  const onLike = async () => {
+    try {
+      if (liked) {
+        let updatedLikes = likes.filter(
+          (like) => like.userId !== currentUser?.id
+        );
+        setLikes([...updatedLikes]);
+        let res = await removePostLike(item?.id, currentUser?.id);
+        if (!res.success) {
+          Alert.alert("Error", "Could not remove like. Please try again!");
+        }
+      } else {
+        let data = {
+          userId: currentUser?.id,
+          postId: item?.id,
+        };
+        setLikes([...likes, data]);
+        let res = await createPostLike(data);
+        if (!res.success) {
+          Alert.alert("Error", "Could not add like. Please try again!");
+        }
+      }
+    } catch (error) {
+      console.error("Error updating like status:", error);
+      Alert.alert("Error", "Something went wrong. Please try again.");
+    }
+  };
+  const onShare = async () => {
+    try {
+      let content = { message: stripHtmlTags(item?.body) };
+  
+      // Check if the post has a file (image or media)
+      if (item?.file) {
+        setLoading(true);
+        
+        // Get the URL of the media file from Supabase
+        const fileUrl = getSupabaseFileUrl(item?.file).uri; // Access the uri property
+  
+        // Add the media file URL to the message content
+        content.url = fileUrl; // Directly add the media URI for sharing
+        setLoading(false);
+      }
+  
+      // Add the post URL to the message if required (optional)
+      const postUrlObject = getSupabaseFileUrl(item?.file);  // This returns an object, not just a URL
+      const postUrl = postUrlObject?.uri; // Access the uri property of the object
+      
+      if (postUrl) {
+        content.message += `\n\nCheck out this post: ${postUrl}`;  // Add the link to the post correctly
+      }
+  
+      // Share the content (message and optional file URL)
+      Share.share(content);
+    } catch (error) {
+      console.error("Error sharing content:", error);
+      Alert.alert("Error", "Could not share the post. Please try again.");
+    }
+  };
+  
+  
+  
   //formatting date and time for better look
-  const createdAt = moment(item?.created_at).format("DD MMM YYYY   |   HH:MM");
-  const likes =[];
-  const liked =false;
+  const createdAt = moment(item?.created_at).format("DD MMM YYYY   |   HH:mm");
+  
+  const liked = likes.filter((like) => like.userId == currentUser?.id)[0]
+    ? true
+    : false;
+
+  // const liked = Array.isArray(likes) && likes.some(like => like.userId === currentUser?.id) || false;
+const handlePostDelete=()=>{
+  Alert.alert("Confirm", "Are you sure?", [
+                  {
+                    text: "Cancel",
+                  },
+                  {
+                    onPress: () => onDelete(item),
+                    text: "Delete",
+                  },
+                ]);
+}
   return (
     <View className="flex-1 items-center p-5">
       {/* Post Card Content */}
@@ -98,7 +150,7 @@ const PostCard = ({ item, currentUser, router, hasShadow = true }) => {
         className="bg-secondary-100 border-2 border-primary-500 rounded-3xl"
         style={{
           width: wp(90),
-          height: 'fit',
+          height: "fit",
           ...shadowStyle,
         }}
       >
@@ -114,28 +166,47 @@ const PostCard = ({ item, currentUser, router, hasShadow = true }) => {
               {createdAt}
             </Text>
           </View>
-          <TouchableOpacity
-            className="flex-1 items-end"
-            onPress={openPostDetails}
-          >
-            <Icon name="threeDotsCircle" size={24} />
-          </TouchableOpacity>
+          {showMoreIcon && (
+            <TouchableOpacity
+              className="flex-1 items-end"
+              onPress={openPostDetails}
+            >
+              <Icon name="threeDotsCircle" size={24} />
+            </TouchableOpacity>
+          )}
+
+          {
+            showDelete && currentUser.id == item?.userId &&(
+              <View className="flex-1 flex-row gap-7 pl-5">
+                <TouchableOpacity
+              className=""
+              onPress={()=>onEdit(item)}
+            >
+              <Icon name="edit" size={24} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              className=""
+              onPress={handlePostDelete}
+            >
+              <Icon name="delete" size={24} color='red'/>
+            </TouchableOpacity>
+              </View>
+            )
+          }
         </View>
 
         {/* Post body & media*/}
         <View>
           <View className="px-5 mb-5">
-            <Text className="font-rubik-regular">
-            {item?.body}
-            </Text>
-
-            {/* && (
+            <Text className="font-rubik-regular">{item?.body && (
               <RenderHtml
                 contentWidth={wp(100)}
                 source={{ html: item?.body }}
                 tagsStyles={tagsStyle}
               />
-            ) */}
+            )}</Text>
+
+           
           </View>
         </View>
 
@@ -180,68 +251,61 @@ const PostCard = ({ item, currentUser, router, hasShadow = true }) => {
                     </View>
                   )
                 } */}
-                
-  {item?.file && /\.(mp4|mp3)$/i.test(item.file) ? (
-    <View className="px-5 pb-5">
-      <View>
-        {getSupabaseFileUrl(item?.file) ? (
-          <Video
-            source={ getSupabaseFileUrl(item?.file) }
-            useNativeControls
-            resizeMode="cover"
-            isLooping
-            
-            style={{
-              width: "100%",
-              height: hp(50),
-              borderRadius: 10,
-            }}
-          />
-        ) : (
-          <Text>Loading video...</Text>
-        )}
-      </View>
-    </View>
-  ) : null}
-  
 
+        {item?.file && /\.(mp4|mp3)$/i.test(item.file) ? (
+          <View className="px-5 pb-5">
+            <View>
+              {getSupabaseFileUrl(item?.file) ? (
+                <Video
+                  source={getSupabaseFileUrl(item?.file)}
+                  useNativeControls
+                  resizeMode="cover"
+                  isLooping
+                  style={{
+                    width: "100%",
+                    height: hp(50),
+                    borderRadius: 10,
+                  }}
+                />
+              ) : (
+                <Text>Loading video...</Text>
+              )}
+            </View>
+          </View>
+        ) : null}
 
-
-
-      {/* Like comment share */}
-      <View className="p-5 flex flex-row gap-9">
-        <View className="flex flex-row gap-2 items-center">
-          <TouchableOpacity>
-          <Icon name="heart" size={24} fill={liked?'#F75555':'transparent'} color={liked?'#F75555':'#3E3E3E'} />
-          </TouchableOpacity>
-          <Text>
-            {
-              likes?.length
-            }
-          </Text>
-          
-        </View>
-        <View className="flex flex-row gap-2 items-center">
-          <TouchableOpacity>
-          <Icon name="comment" size={24} color={'#3E3E3E'} />
-          </TouchableOpacity>
-          <Text>
-            {
-              0
-            }
-          </Text>
-          
-        </View>
-        <View className="flex flex-row gap-2">
-          <TouchableOpacity>
-          <Icon name="share" size={24} color={'#3E3E3E'} />
-          </TouchableOpacity>
-          
+        {/* Like comment share */}
+        <View className="p-5 flex flex-row gap-9">
+          <View className="flex flex-row gap-2 items-center">
+            <TouchableOpacity onPress={onLike}>
+              <Icon
+                name="heart"
+                size={24}
+                fill={liked ? "#F75555" : "transparent"}
+                color={liked ? "#F75555" : "#3E3E3E"}
+              />
+            </TouchableOpacity>
+            <Text>{likes?.length}</Text>
+          </View>
+          <View className="flex flex-row gap-2 items-center">
+            <TouchableOpacity onPress={openPostDetails}>
+              <Icon name="comment" size={24} color={"#3E3E3E"} />
+            </TouchableOpacity>
+            <Text>{item?.comments?.[0]?.count || 0}</Text>
+          </View>
+          <View className="flex flex-row gap-2">
+            {loading ? (
+              <View className="rounded-full">
+                <Loading size={24} />
+              </View>
+            ) : (
+              <TouchableOpacity onPress={onShare}>
+                <Icon name="share" size={24} color={"#3E3E3E"} />
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
       </View>
-      </View>
-
-      
     </View>
   );
 };
