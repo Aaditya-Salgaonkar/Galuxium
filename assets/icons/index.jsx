@@ -26,10 +26,12 @@ import Chat from './Chat';
 import Bio from './Bio'
 import ArrowRight from './ArrowRight';
 import About from './About';
-import Favourites from './Favourites'
+import Favourites from './Favourites';
+import Cross from './Cross';
 const icons = {
   home:Home,
   mail: Mail,
+  cross:Cross,
   lock: Lock,
   user: User,
   heart: Heart,

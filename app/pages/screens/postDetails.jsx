@@ -182,11 +182,11 @@ const Details = () => {
       Alert.alert("Post", res.msg);
     }
   };
-  const onEditPost = async (item) => {
-    router.back();
-    router.push({pathname:'pages/screens/postScreen',params:{...item}});
+  // const onEditPost = async (item) => {
+  //   router.back();
+  //   router.push({pathname:'pages/screens/postScreen',params:{...item}});
     
-  };
+  // };
 
   if (startLoading) {
     return (
@@ -228,7 +228,7 @@ const Details = () => {
                 router={router}
                 hasShadow={false}
                 showMoreIcon={false}
-                showDelete={true}
+                showDelete={false}
                 onDelete={onDeletePost}
                 onEdit={onEditPost}
                 style={{

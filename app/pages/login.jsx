@@ -80,7 +80,7 @@ const Login = () => {
           <Text className="font-rubik-bold text-4xl pl-7">Hey</Text>
           <Text className="font-rubik-bold text-4xl pl-7">Welcome!</Text>
         </View>
-        <View className="flex items-center -mt-5">
+        <View className="flex items-center -mt-10">
           <Image
             source={require("../../assets/images/login.png")}
             resizeMode="contain"
@@ -93,7 +93,7 @@ const Login = () => {
             <Text className="font-rubik-medium pl-7 text-secondary-200">
               Please login to continue
             </Text>
-            <View className="flex items-center absolute p-10 top-5">
+            <View className="flex items-center absolute py-10 top-5">
               <Input
                 title="Email"
                 icon={<Icon name="mail" size={26} strokeWidth={1.6} />}
@@ -101,7 +101,7 @@ const Login = () => {
                 onChangeText={(value) => (emailRef.current = value)}
               />
             </View>
-            <View className="flex items-center absolute p-10 top-28">
+            <View className="flex items-center absolute py-10 top-24 mt-2">
               <Input
                 title="Password"
                 icon={<Icon name="lock" size={26} strokeWidth={1.6} />}
@@ -112,15 +112,15 @@ const Login = () => {
             </View>
           </View>
         </View>
-        <View style={styles.container} className="flex items-center top-60">
+        <View style={styles.container} className="flex items-center top-56">
           <Button
             title={"Log In"}
             loading={loading}
-            buttonStyle={{ marginHorizontal: wp(5) }}
+            buttonStyle={{ width: wp(90) }}
             onPress={onSubmit}
           />
         </View>
-        <View className="flex-1 justify-center top-32 flex-row gap-2 items-center p-32 -mt-5">
+        <View className="flex-1 justify-center top-28 flex-row gap-2 items-center p-32 -mt-5">
           <Text className="font-rubik-medium">New to Galuxium!</Text>
           <TouchableOpacity onPress={() => router.push("/pages/signup")}>
             <Text className="font-rubik-bold text-primary-100">Sign Up</Text>

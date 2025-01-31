@@ -6,14 +6,16 @@ import { useFonts } from "expo-font";
 import {AuthProvider,useAuth} from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import {getUserData} from '../services/userService'
-
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 LogBox.ignoreLogs(['Warning: TNodeChildrenRenderer','Warning: MemoizedTNodeRenderer','Warning: TRenderEngineProvider'])
 
 const _layout=()=>{
   return (
-    <AuthProvider>
+    <GestureHandlerRootView className='flex-1'>
+      <AuthProvider>
         <MainLayout />
     </AuthProvider>
+    </GestureHandlerRootView>
   )
 }
 

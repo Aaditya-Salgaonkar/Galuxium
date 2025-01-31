@@ -26,7 +26,10 @@ module.exports = {
           700: "#2C6E49", // Forest Green - Trust elements (e.g., verified icons)
           800: "#DAA520", // Goldenrod - Hover and active states for elements like buttons
           900: "#F8D7A4", // Light Gold - Highlight sections, accent borders
-          
+          1000:'#4B0082', //indigo
+          1100:'#E6E6FA',//lavender
+          1200:'#5D3FD3',//iris indigo,
+          1300:'#e4deff',//iris light
         },
 
         // Secondary Colors - Additional Highlights

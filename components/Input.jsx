@@ -5,7 +5,7 @@ import React from 'react'
 const Input = (props) => {
   return (
     
-        <View className='flex w-full flex-row bg-white justify-between items-start p-7 gap-3 h-4/6 rounded-full border-2' style={{borderColor:'#4B2C7F'}}>
+        <View className='flex w-full flex-row bg-white justify-between items-start p-7 gap-3 h-4/6 rounded-3xl border-2' style={{borderColor:'#4B2C7F'}}>
           <View className='-mt-4'>
           {
             props.icon && props.icon

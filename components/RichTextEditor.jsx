@@ -8,20 +8,13 @@ const RichTextEditor = ({ editorRef, onChange }) => {
     <View className="p-5 mt-10 bg-white border-2 border-primary-500 rounded-3xl h-80">
       <RichToolbar
         actions={[
-          actions.insertImage,
           actions.setBold,
           actions.setItalic,
           actions.insertBulletsList,
           actions.insertOrderedList,
           actions.insertLink,
-          actions.keyboard,
           actions.setStrikethrough,
           actions.setUnderline,
-          actions.removeFormat,
-          actions.insertVideo,
-          actions.checkboxList,
-          actions.undo,
-          actions.redo,
           actions.heading1,
           actions.heading4
         ]}

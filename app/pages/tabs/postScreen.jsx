@@ -119,7 +119,7 @@ console.log('Post',post)
       <StatusBar />
       {/* Header */}
       <View className="flex-1 bg-primary-50 px-5">
-        <View className="flex mt-4 ml-3 flex-row justify-between items-center">
+        <View className="flex mt-4 flex-row justify-between items-center">
           <View className="flex">
             {/* <BackButton router={router} /> */}
           </View>
@@ -127,12 +127,10 @@ console.log('Post',post)
             <Text className="font-rubik-bold text-3xl">{post && post.id?"Update Post":"Create Post"}</Text>
           </View>
           <View className="flex">
-            <TouchableOpacity onPress={()=>router.push('/screens/menu')}>
-              <Icon name="threeDotsHorizontal" size={hp(4)} />
-            </TouchableOpacity>
+            
           </View>
         </View>
-        <ScrollView className="gap-20 flex-1" showsVerticalScrollIndicator={false}>
+        <ScrollView className="gap-20 flex-1 mt-5" showsVerticalScrollIndicator={false}>
           <View className="flex flex-row items-center gap-5 mt-5">
             <Avatar uri={user?.image} size={hp(6.5)} />
             <View className="">

@@ -28,7 +28,6 @@ const Edit = () => {
 
   const [user, setUser] = useState({
     name: "",
-    phoneNumber: "",
     image: null,
     bio: "",
     address: "",
@@ -38,7 +37,6 @@ const Edit = () => {
     if (currentUser) {
       setUser({
         name: currentUser.name || "",
-        phoneNumber: currentUser.phoneNumber || "",
         image: currentUser.image || null,
         bio: currentUser.bio || "",
         address: currentUser.address || "",
@@ -100,7 +98,8 @@ const Edit = () => {
   
   const onSubmit = async () => {
     let userData = { ...user };
-    let { name, phoneNumber, address, image, bio } = userData;
+    console.log("User Data : ",userData)
+    let { name, address, image, bio } = userData;
     setLoading(true);
   
     // Image handling
@@ -159,12 +158,7 @@ const Edit = () => {
                           <Text className="font-rubik-bold text-3xl">ile</Text>
                           </View>
                           </View>
-                          <View className="flex flex-row gap-4">
-                            <TouchableOpacity onPress={()=>router.push('/screens/menu')}>
-                              <Icon name="threeDotsHorizontal" size={hp(4)} />
-                            </TouchableOpacity>
-                            
-                          </View>
+                          
                           </View>
           {/*old header not responsive enough
            <View className="">
@@ -221,11 +215,11 @@ const Edit = () => {
               </View>
               <View className="flex items-center absolute p-10 top-20">
                 <Input
-                  icon={<Icon name="call" />}
-                  placeholder="Enter your contact number"
-                  value={user.phoneNumber}
+                  icon={<Icon name="bio" />}
+                  placeholder="Enter your bio"
+                  value={user.bio}
                   onChangeText={(value) =>
-                    setUser({ ...user, phoneNumber: value })
+                    setUser({ ...user, bio: value })
                   }
                   containerStyles={{
                     borderWidth: 1,
@@ -247,30 +241,16 @@ const Edit = () => {
                   }}
                 />
               </View>
-              <View className="flex items-center absolute p-10 top-60">
-                <Input
-                  placeholder="Enter your bio"
-                  value={user.bio}
-                  onChangeText={(value) => setUser({ ...user, bio: value })}
-                  containerStyles={{
-                    borderWidth: 1,
-                    borderColor: "#F8D7A4",
-                    paddingTop: hp(3.5),
-                    height: hp(15),
-                    borderRadius: 20,
-                    paddingLeft: 10,
-                  }}
-                />
-                <View className="mt-10">
+              
+                <View className="mt-60 items-center">
                   <Button
                     title={"Update"}
                     loading={loading}
                     onPress={onSubmit}
                     buttonStyle={{
-                      marginHorizontal: wp(1),
+                      width:wp(70)
                     }}
                   />
-                </View>
               </View>
             </View>
           </View>

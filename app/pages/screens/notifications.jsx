@@ -39,12 +39,7 @@ const notification = () => {
                           
                           </View>
                           </View>
-                          <View className="flex flex-row gap-4">
-                            <TouchableOpacity onPress={()=>router.push('menu')}>
-                              <Icon name="threeDotsHorizontal" size={hp(4)} />
-                            </TouchableOpacity>
-                            
-                          </View>
+                          
                           </View>
       {/* <View className="flex  flex-row px-5">
         <View className="flex-1 mt-4 ml-3 flex-row justify-between">

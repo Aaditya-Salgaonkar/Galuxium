@@ -22,6 +22,7 @@ const NewPost = () => {
 
 console.log('Post',post)
   const { user} = useAuth();
+  console.log("User",user)
   const bodyRef = useRef("");
   const editorRef = useRef(null);
   const router = useRouter();
@@ -31,6 +32,7 @@ console.log('Post',post)
   useEffect(()=>{
     if(post && post.id){
       bodyRef.current=post.body;
+      console.log("BodyRef",bodyRef)
       setFile(post.file||null);
       setTimeout(() => {
         
@@ -39,7 +41,7 @@ console.log('Post',post)
       }, 300);
 
     }
-  },[])
+  },[post])
 
   const onPick = async (isImage) => {
     let mediaConfig = {
@@ -97,11 +99,13 @@ console.log('Post',post)
       file,
       body:bodyRef.current,
       userId:user?.id,
+      
     }
     if(post &&post.id) data.id=post.id;
    //create post
    setLoading(true);
    let res= await createOrUpdatePost(data);
+   console.log("Res",res)
    setLoading(false);
    if(res.success){
     setFile(null);
@@ -119,18 +123,14 @@ console.log('Post',post)
       <StatusBar />
       {/* Header */}
       <View className="flex-1 bg-primary-50 px-5">
-        <View className="flex -ml-3 flex-row justify-between items-center">
+        <View className="flex flex-row justify-between items-center mt-4">
           <View className="flex">
             <BackButton router={router} />
           </View>
           <View className="flex-1">
             <Text className="font-rubik-bold text-3xl">{post && post.id?"Update Post":"Create Post"}</Text>
           </View>
-          <View className="flex">
-            <TouchableOpacity onPress={()=>router.push('/screens/menu')}>
-              <Icon name="threeDotsHorizontal" size={hp(4)} />
-            </TouchableOpacity>
-          </View>
+          
         </View>
         <ScrollView className="gap-20 flex-1" showsVerticalScrollIndicator={false}>
           <View className="flex flex-row items-center gap-5 mt-5">
@@ -171,7 +171,7 @@ console.log('Post',post)
                 />
                 </View>
               )}
-              <View className="flex-1 absolute mt-10 right-20 ">
+              <View className="flex-1 absolute mt-10 right-16 ">
               <TouchableOpacity className="flex-1" onPress={()=>setFile(null)}>
                 <Icon name="delete" size={30} color="red" />
               </TouchableOpacity>

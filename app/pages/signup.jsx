@@ -50,7 +50,8 @@ const SignUp = () => {
       password,
       options:{
         data:{
-          name
+          name,
+          email
         }
       }
     })
@@ -58,7 +59,6 @@ const SignUp = () => {
     //can perform email verification as well by toggling the verification under providers at supabase auth & implementing the necessary logic
 
     setLoading(false);
-
     // console.log('session : ',session);
     // console.log('error : ',error);
 
@@ -96,7 +96,7 @@ const SignUp = () => {
           <Image
             source={require("../../assets/images/signup.png")}
             resizeMode="contain"
-            className="size-80"
+            className="size-72"
           />
         </View>
 
@@ -105,7 +105,7 @@ const SignUp = () => {
             Please fill in the details to create an account
           </Text>
           <View className='-mt-2'>
-          <View className="flex items-center absolute p-10">
+          <View className="flex items-center absolute py-10">
             <Input
               title="Name"
               icon={<Icon name="user" size={26} strokeWidth={1.6} />}
@@ -113,7 +113,7 @@ const SignUp = () => {
               onChangeText={(value) => (nameRef.current = value)}
             />
           </View>
-          <View className="flex items-center absolute p-10 top-20">
+          <View className="flex items-center absolute py-10 top-20">
             <Input
               title="Email"
               icon={<Icon name="mail" size={26} strokeWidth={1.6} />}
@@ -121,7 +121,7 @@ const SignUp = () => {
               onChangeText={(value) => (emailRef.current = value)}
             />
           </View>
-          <View className="flex items-center absolute p-10 top-40">
+          <View className="flex items-center absolute py-10 top-40">
             <Input
               title="Password"
               icon={<Icon name="lock" size={26} strokeWidth={1.6} />}
@@ -136,12 +136,12 @@ const SignUp = () => {
         </View>
         <View
             style={styles.container}
-            className="flex items-center top-64 mt-7"
+            className="flex items-center top-64 mt-10"
           >
             <Button
               title={"Sign Up"}
               loading={loading}
-              buttonStyle={{ marginHorizontal: wp(5) }}
+              buttonStyle={{ width: wp(90) }}
               onPress={onSubmit}
             />
            

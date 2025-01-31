@@ -30,10 +30,10 @@ const Button = ({
     return (
     <TouchableOpacity 
     onPress={onPress} 
-    className='bg-primary-100 p-3 rounded-full justify-center items-center'
+    className='bg-primary-100 p-3 rounded-3xl justify-center items-center'
     style={combinedStyles}
     >
-      <Text className='text-primary-200 font-rubik-medium text-2xl text-center px-10' style={{textStyle}}>{title}</Text>
+      <Text className='text-white font-rubik-medium text-2xl text-center px-10 py-1' style={{textStyle}}>{title}</Text>
     </TouchableOpacity>
     
   )

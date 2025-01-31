@@ -15,7 +15,7 @@ export const getSupabaseFileUrl = filePath =>{
     if(filePath){
         
         // console.log("filepath",filePath);
-        return {uri:`${supabaseUrl}/storage/v1/object/public/uploadprofiles/${filePath}`}
+        return {uri:`${supabaseUrl}/storage/v1/object/public/uploads/${filePath}`}
     }
     return null;
 }
@@ -79,7 +79,7 @@ export const uploadFile = async (folderName,fileUri,isImage=true)=>{
 
         let {data,error} = await supabase
         .storage
-        .from('uploadprofiles')
+        .from('uploads')
         .upload(fileName,imageData,{
             cacheControl:'3600',
             upsert:false,

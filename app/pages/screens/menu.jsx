@@ -12,7 +12,7 @@ const Menu = () => {
     <ScreenWrapper>
         <View className="flex -ml-3 flex-row justify-between items-center px-5"> 
                           <View className="flex">
-                            <BackButton router={router} />
+                            <BackButton onPress={router.push('/postDetails')} />
                           </View>
                           <View className="flex-1 flex-row justify-between">
                           <View className="flex-row">
@@ -29,7 +29,7 @@ const Menu = () => {
                 <MenuOption name="arrowright" icon="lock" title="Account privacy" />
             </TouchableOpacity>
             <TouchableOpacity>
-                <MenuOption name="arrowright" icon="user" title="Account status" />
+                <MenuOption name="arrowright" icon="user" tiztle="Account status" />
             </TouchableOpacity>
             <TouchableOpacity>
                 <MenuOption name="arrowright" icon="favourites" title="Favourites" />

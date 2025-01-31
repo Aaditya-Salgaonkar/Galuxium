@@ -73,7 +73,7 @@ const CommentItem = ({
         >
           <Avatar uri={item?.user?.image} />
           <View>
-            <View className="flex flex-row justify-between">
+            <View className="flex flex-row">
               <View className="flex-row">
                 <Text className="text-1xl font-rubik-bold">
                   {item?.user?.name}
@@ -83,7 +83,7 @@ const CommentItem = ({
               </View>
               <View>
                 {canDelete && (
-                  <TouchableOpacity onPress={handleDelete} className="ml-5">
+                  <TouchableOpacity onPress={handleDelete} className="flex-1 items-end justify-center ml-3">
                     <Icon name="delete" color="red" size={20} />
                   </TouchableOpacity>
                 )}

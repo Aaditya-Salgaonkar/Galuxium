@@ -1,14 +1,15 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, FlatList } from "react-native";
+import { View, Text, TouchableOpacity, FlatList, Image } from "react-native";
 import ScreenWrapper from "../../../components/ScreenWrapper";
 import Icon from "@/assets/icons";
-import { hp, wp } from "../../../helpers/common";
+import { hp } from "../../../helpers/common";
 import { supabase } from "../../../lib/supabase";
 import { StatusBar } from "expo-status-bar";
 import Input from "@/components/Input";
 import Loading from "@/components/Loading";
 import { useRouter } from "expo-router";
 import Avatar from "../../../components/Avatar";
+import { useFocusEffect } from "@react-navigation/native";
 
 const debounce = (func, delay) => {
   let timeout;
@@ -32,11 +33,10 @@ const SearchScreen = () => {
     setLoading(true);
 
     try {
-      // Perform a case-insensitive search using ilike
       const { data, error } = await supabase
         .from("users")
         .select("*")
-        .or(`name.ilike.%${term}%`); // Matches if the name contains the term
+        .or(`name.ilike.%${term}%`);
 
       if (error) throw error;
 
@@ -49,91 +49,121 @@ const SearchScreen = () => {
     }
   };
 
-  const debouncedSearch = debounce(fetchSearchResults, 300); // Delay API call by 300ms
+  const debouncedSearch = debounce(fetchSearchResults, 300);
 
   const handleSearchInput = (term) => {
     setSearchTerm(term);
-    debouncedSearch(term); // Trigger debounced search
+    debouncedSearch(term);
   };
+
+  const clearSearch = () => {
+    setSearchTerm("");
+    setResults([]);
+  };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      return () => {
+        setSearchTerm("");
+        setResults([]);
+      };
+    }, [])
+  );
 
   return (
     <ScreenWrapper>
       <StatusBar />
       <View className="flex-1 bg-primary-50 px-5">
         {/* Header */}
-        <View className="flex mt-4 ml-3 flex-row justify-between">
+        <View className="flex mt-4 flex-row justify-between">
           <Text className="font-rubik-bold text-3xl">Search</Text>
-          <TouchableOpacity onPress={() => router.push("/pages/screens/menu")}>
-            <Icon name="threeDotsHorizontal" size={hp(4)} />
-          </TouchableOpacity>
+         
         </View>
 
-        {/* Search Input */}
-        <View className="mt-5 px-3">
-          <Input
-            icon={<Icon name="search" />}
-            placeholder="Search users..."
-            value={searchTerm}
-            onChangeText={handleSearchInput}
-            containerStyles={{
-              borderWidth: 1,
-              borderColor: "#F8D7A4",
-              paddingTop: hp(3.5),
-            }}
-          />
-        </View>
-
-        {/* Loading Indicator */}
-        {loading && <Loading />}
-
-        {/* Search Results */}
-        <FlatList
-          data={results}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
+        {/* Search Input with Clear Button */}
+        <View className="absolute left-10 right-10 top-20 flex-row items-center">
+          <View className="flex-1">
+            <Input
+              icon={<Icon name="search" />}
+              placeholder="Search users..."
+              value={searchTerm}
+              onChangeText={handleSearchInput}
+            />
+          </View>
+          {searchTerm ? (
             <TouchableOpacity
-              onPress={() => {
-                router.push({
-                  pathname: "/pages/screens/profile",
-                  params: { userId: item.id }, // Navigate to profile
-                });
-              }}
-              className="mt-3 p-3 bg-white rounded-lg"
+              onPress={clearSearch}
+              className=" bg-white p-2 rounded-3xl ml-5"
             >
-              <View>
-                <View className="bg-white p-5 rounded-3xl items-center m-2">
-                  <View style={{ width: wp(85) }} className="flex-row gap-5">
-                    <Avatar uri={item.image} />
-                    <View>
-                      <View className="flex flex-row justify-between">
-                        <View className="flex-row">
-                          <Text className="text-1xl font-rubik-bold">
+              <Icon name="cross" size={hp(3)} />
+            </TouchableOpacity>
+          ) : null}
+        </View>
+
+        <View className="mt-40">
+          {/* Initial Image */}
+          {!searchTerm && !loading && results.length === 0 && (
+            <View className="flex-1  items-center justify-start mt-20">
+              <Image
+                source={require("../../../assets/images/search.png")}
+                className="size-96"
+                resizeMode="contain"
+              />
+            </View>
+          )}
+
+          {/* Loading Indicator */}
+          {loading && <Loading />}
+
+          {/* No Results Message */}
+          {searchTerm && !loading && results.length === 0 && (
+            <View className="flex items-center justify-center mt-20">
+              
+              <Image 
+              source={require('../../../assets/images/nosearch.png')}
+              resizeMode="contain"
+              className="size-72"
+              />
+              <Text className="text-gray-500 text-3xl font-rubik-semibold">
+                No results found!
+              </Text>
+            </View>
+          )}
+
+          {/* Search Results */}
+          {!loading && results.length > 0 && (
+            <FlatList
+              data={results}
+              keyExtractor={(item) => item.id}
+              showsVerticalScrollIndicator={false}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  onPress={() => {
+                    router.push({
+                      pathname: "/pages/profileinfo",
+                      params: { userId: item.id },
+                    });
+                  }}
+                >
+                  <View>
+                    <View className="bg-white p-5 gap mt-5 rounded-3xl">
+                      <View className="flex flex-row items-center gap-5">
+                        <View>
+                          <Avatar uri={item.image} />
+                        </View>
+                        <View>
+                          <Text className="font-rubik-semibold">
                             {item.name}
-                          </Text>
-                          <Text className="text-1xl font-rubik-extrabold">
-                            •
                           </Text>
                         </View>
                       </View>
-                      <View className="pr-14 mt-2">
-                        <Text className="text-1xl font-rubik-medium">
-                          {item?.text}
-                        </Text>
-                      </View>
                     </View>
                   </View>
-                </View>
-              </View>
-            </TouchableOpacity>
+                </TouchableOpacity>
+              )}
+            />
           )}
-          ListEmptyComponent={
-            !loading && (
-              <Text className="text-center text-gray-500 mt-5">
-                No results found.
-              </Text>
-            )
-          }
-        />
+        </View>
       </View>
     </ScreenWrapper>
   );

@@ -1,119 +1,194 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, FlatList } from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
+} from "react-native";
 import { supabase } from "../../../lib/supabase";
-import ScreenWrapper from "../../../components/ScreenWrapper";
-import { StatusBar } from "expo-status-bar";
-import Icon from "@/assets/icons"; // Replace with your icons
-import Loading from "../../../components/Loading";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useAuth } from "@/context/AuthContext";
+import Input from "../../../components/Input";
+import Icon from "@/assets/icons";
+import Avatar from "@/components/Avatar";
 
-const ChatRoomScreen = ({ route }) => {
-  const { groupId, recipientId } = route.params; // Determines chat type
+const ChatRoomScreen = () => {
+  const router = useRouter();
+  const params = useLocalSearchParams();
+  const { user } = useAuth();
+  const recipientId = params?.recipientId;
+
+  const [recipient, setRecipient] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
-  const [loading, setLoading] = useState(true);
-console.log("GroupId: ",groupId)
-console.log("RecipientId: ",recipientId)
-  // Fetch messages for the chat room
-  const fetchMessages = async () => {
-    try {
-      const query = supabase
-        .from("messages")
-        .select("*")
-        .order("created_at", { ascending: true });
+  const [typing, setTyping] = useState(false);
 
-      if (groupId) query.eq("group_id", groupId);
-      if (recipientId) query.eq("recipient_id", recipientId);
+  // Fetch recipient details
+  useEffect(() => {
+    const fetchRecipientDetails = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("users")
+          .select("id, name, image")
+          .eq("id", recipientId)
+          .single();
 
-      const { data, error } = await query;
-      if (error) throw error;
+        if (error) throw error;
+        setRecipient(data);
+      } catch (err) {
+        console.error("Error fetching recipient details:", err.message);
+      }
+    };
 
-      setMessages(data);
-    } catch (err) {
-      console.error("Error fetching messages:", err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+    if (recipientId) fetchRecipientDetails();
+  }, [recipientId]);
 
-  // Send a message
+  // Fetch messages and set up real-time updates
+  useEffect(() => {
+    const fetchMessages = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("messages")
+          .select("*")
+          .or(
+            `recipient_id.eq.${recipientId},sender_id.eq.${recipientId}`
+          )
+          .order("created_at", { ascending: true });
+
+        if (error) throw error;
+        setMessages(data);
+      } catch (err) {
+        console.error("Error fetching messages:", err.message);
+      }
+    };
+
+    fetchMessages();
+
+    const channel = supabase
+      .channel(`messages:${recipientId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+          filter: `recipient_id=eq.${recipientId} OR sender_id=eq.${recipientId}`,
+        },
+        (payload) => {
+          console.log("New message received:", payload.new);
+          setMessages((prev) => [...prev, payload.new]);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [recipientId]);
+
+  // Send message
   const sendMessage = async () => {
     if (!newMessage.trim()) return;
 
+    const newMessageData = {
+      content: newMessage,
+      sender_id: user.id,
+      recipient_id: recipientId,
+      created_at: new Date().toISOString(),
+    };
+
+    // Optimistically update UI
+    setMessages((prevMessages) => [...prevMessages, newMessageData]);
+    setNewMessage("");
+
     try {
-      const { error } = await supabase.from("messages").insert({
-        content: newMessage,
-        sender_id: supabase.auth.user().id,
-        group_id: groupId || null,
-        recipient_id: recipientId || null,
-      });
-
+      const { error } = await supabase.from("messages").insert(newMessageData);
       if (error) throw error;
-
-      setNewMessage(""); // Clear input
     } catch (err) {
       console.error("Error sending message:", err.message);
     }
   };
 
-  // Real-time subscription
-  useEffect(() => {
-    const subscription = supabase
-      .from("messages")
-      .on("INSERT", (payload) => {
-        const newMessage = payload.new;
-        // Add new message to the state
-        setMessages((prev) => [...prev, newMessage]);
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeSubscription(subscription);
-    };
-  }, []);
-
-  useEffect(() => {
-    fetchMessages();
-  }, []);
-
-  if (loading) return <Loading />;
+  const MessageBubble = ({ message, isSender }) => (
+    <View>
+      {isSender ? (
+        <View className="items-end">
+          <View className="items-end bg-primary-1000 px-5 py-3 rounded-3xl m-2">
+            <Text className="font-rubik-medium text-primary-50">
+              {message.content}
+            </Text>
+            <Text style={styles.timestamp}>
+              {new Date(message.created_at).toLocaleTimeString()}
+            </Text>
+          </View>
+        </View>
+      ) : (
+        <View className="items-start">
+          <View className="items-start bg-primary-1100 px-5 py-3 rounded-3xl m-2">
+            <Text className="font-rubik-medium">{message.content}</Text>
+            <Text style={styles.timestamp}>
+              {new Date(message.created_at).toLocaleTimeString()}
+            </Text>
+          </View>
+        </View>
+      )}
+    </View>
+  );
 
   return (
-    <ScreenWrapper>
-      <StatusBar />
-      <View className="flex-1 bg-primary-50 px-5">
-        {/* Messages List */}
-        <FlatList
-          data={messages}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <View
-              className={`my-2 p-3 rounded-lg ${
-                item.sender_id === supabase.auth.user().id
-                  ? "bg-blue-200 self-end"
-                  : "bg-gray-200 self-start"
-              }`}
-            >
-              <Text>{item.content}</Text>
-            </View>
-          )}
-          className="flex-1"
-        />
+    <View className="flex-1 p-5 pb-24 mt-5 bg-primary-50">
+      {/* Header */}
+      <TouchableOpacity
+        className="flex flex-row items-center gap-4 justify-center py-2"
+        onPress={() => router.push("/pages/profileinfo")}
+      >
+        <Avatar uri={recipient?.image} />
+        <Text className="font-rubik-semibold">{recipient?.name}</Text>
+      </TouchableOpacity>
 
-        {/* Message Input */}
-        <View className="flex-row items-center mt-2">
-          <TextInput
-            placeholder="Type a message..."
-            value={newMessage}
-            onChangeText={setNewMessage}
-            className="flex-1 border rounded-lg px-4 py-2"
+      {/* Messages */}
+      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+        {messages.map((message) => (
+          <MessageBubble
+            key={
+              message.id ||
+              `${message.sender_id}-${message.recipient_id}-${message.created_at}`
+            }
+            message={message}
+            isSender={message.sender_id === user.id}
           />
-          <TouchableOpacity onPress={sendMessage} className="ml-2 bg-blue-500 p-3 rounded-lg">
-            <Icon name="send" size={20} color="#fff" />
-          </TouchableOpacity>
-        </View>
+        ))}
+        {typing && (
+          <Text style={styles.typingIndicator}>Recipient is typing...</Text>
+        )}
+      </ScrollView>
+
+      {/* Input */}
+      <View className="left-5 right-20 absolute flex-row bottom-4 gap-4">
+        <Input
+          value={newMessage}
+          onChangeText={setNewMessage}
+          placeholder="Type a message..."
+        />
+        <TouchableOpacity
+          onPress={sendMessage}
+          className="flex-1 justify-center mb-1"
+        >
+          <Icon name="send" size={32} />
+        </TouchableOpacity>
       </View>
-    </ScreenWrapper>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  timestamp: {
+    fontSize: 10,
+    color: "#999",
+    marginTop: 4,
+    textAlign: "right",
+  },
+});
 
 export default ChatRoomScreen;

@@ -112,9 +112,9 @@ const Home = () => {
   return (
     <ScreenWrapper>
       <StatusBar />
-      <View className="bg-primary-50 flex-1 px-5">
+      <View className="bg-primary-50 flex-1">
         {/* Header */}
-        <View className="flex-row justify-between mt-4">
+        <View className="flex-row justify-between my-3 px-5">
           <Text className="font-rubik-bold text-3xl">Galuxium</Text>
           <View className="flex-row gap-5">
             <TouchableOpacity onPress={()=>{
@@ -149,7 +149,7 @@ const Home = () => {
         </View>
 
         {/* Posts Section */}
-        <View style={{ flex: 1, marginTop: 20 }}>
+        <View style={{ flex: 1}}>
           {
             //   <FlatList
             //   data={posts}
@@ -197,12 +197,7 @@ const Home = () => {
               onEndReached={() => {
                 getPosts();
               }}
-              refreshing={refreshing}
-              onRefresh={() => {
-                setPosts([]);
-                getPosts();
-              }}
-              contentContainerStyle={{ paddingBottom: 20 }}
+              contentContainerStyle={{ paddingBottom: 10 }}
               ListFooterComponent={
                 hasMore ? (
                   <View
@@ -212,7 +207,7 @@ const Home = () => {
                   </View>
                 ) : (
                   <View className="flex-1 px-5 mt-5">
-                    <Text className="font-rubik-semibold text-center">
+                    {/* <Text className="font-rubik-semibold text-center">
                       No more posts available...
                     </Text>
                     <Image
@@ -225,7 +220,7 @@ const Home = () => {
                         borderRadius: 20,
                         marginTop: -40,
                       }}
-                    />
+                    /> */}
                   </View>
                 )
               }

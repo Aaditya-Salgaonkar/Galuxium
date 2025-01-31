@@ -3,109 +3,179 @@ import {
   Text,
   TouchableOpacity,
   FlatList,
-  ScrollView,
+  Alert,
+  Animated,
+  ImageBackground,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import ScreenWrapper from "../../../components/ScreenWrapper";
-import Icon from "@/assets/icons";
 import { hp } from "../../../helpers/common";
 import { supabase } from "../../../lib/supabase";
 import Avatar from "../../../components/Avatar";
 import { StatusBar } from "expo-status-bar";
 import { useAuth } from "@/context/AuthContext";
-import { Alert } from "react-native";
-import BackButton from "@/components/BackButton";
-import { router, useRouter } from "expo-router";
 import { fetchPosts } from "../../../services/postService";
 import { Image } from "expo-image";
-import { Video } from "expo-av";
 import Loading from "../../../components/Loading";
 import PostCard from "../../../components/PostCard";
+import { useRouter } from "expo-router";
+import { debounce } from "lodash";
+import BackButton from "../../../components/BackButton";
+let limit = 0;
 
-var limit = 0;
 const Profile = () => {
-  const { user, setUser } = useAuth();
+  const { user } = useAuth();
   const [hasMore, setHasMore] = useState(true);
   const [posts, setPosts] = useState([]);
-  const router = useRouter();
+  const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  console.log("user : ", user);
+  const [followersCount, setFollowersCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
+  const router = useRouter();
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const fadePostAnim = useRef(new Animated.Value(0)).current;
 
-  const onLogout = async () => {
-    const { error } = await supabase.auth.signOut();
-    console.log("error", error.message);
-    if (error) {
-      Alert.alert("Sign Out", "Error Signing Out!");
-    }
-  };
-  const getPosts = async () => {
-    if (!hasMore) return null;
-    limit += 10;
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 1500,
+      useNativeDriver: true,
+    }).start();
 
-    // console.log("Fetching posts : ", limit);
-    let res = await fetchPosts(limit, user.id);
+    Animated.timing(fadePostAnim, {
+      toValue: 1,
+      duration: 1000,
+      delay: 300,
+      useNativeDriver: true,
+    }).start();
 
-    if (res.success) {
-      if (posts.length === res.data.length) setHasMore(false);
-      setPosts(res.data);
-    }
-  };
+    fetchFollowersAndFollowing();
+    fetchMorePosts();
+  }, []);
+
+  const fetchMorePosts = useCallback(
+    debounce(async () => {
+      if (!hasMore || loading) return;
+      setLoading(true);
+
+      limit += 10;
+      const res = await fetchPosts(limit, user.id);
+
+      if (res.success) {
+        setPosts((prev) =>
+          [...prev, ...res.data].filter(
+            (value, index, self) =>
+              index === self.findIndex((v) => v.id === value.id) // Ensure no duplicate posts
+          )
+        );
+        setHasMore(res.data.length >= limit);
+      }
+      setLoading(false);
+    }, 500),
+    [hasMore, loading, user.id]
+  );
+
   const handleLogout = async () => {
     Alert.alert("Confirm", "Are you sure you want to log out?", [
-      {
-        text: "Cancel",
-        onPress: () => console.log("Cancelled Successfully"),
-        style: "cancel",
-      },
+      { text: "Cancel", style: "cancel" },
       {
         text: "Logout",
-        onPress: () => onLogout(),
         style: "destructive",
+        onPress: async () => await supabase.auth.signOut(),
       },
     ]);
   };
 
-  
+  const refreshPosts = async () => {
+    setRefreshing(true);
+    limit = 10;
+    const res = await fetchPosts(limit, user.id);
 
-  
+    if (res.success) {
+      setPosts(
+        res.data.filter(
+          (value, index, self) =>
+            index === self.findIndex((v) => v.id === value.id)
+        )
+      );
+      setHasMore(true);
+    }
+    setRefreshing(false);
+  };
+
+  const fetchFollowersAndFollowing = async () => {
+    const { data: followers, error: followersError } = await supabase
+      .from("followers")
+      .select("id")
+      .eq("followed_id", user.id);
+
+    const { data: following, error: followingError } = await supabase
+      .from("followers")
+      .select("id")
+      .eq("follower_id", user.id);
+
+    if (followersError || followingError) {
+      console.error(
+        "Error fetching followers/following count:",
+        followersError || followingError
+      );
+    } else {
+      setFollowersCount(followers.length);
+      setFollowingCount(following.length);
+    }
+  };
 
   return (
     <ScreenWrapper>
-      <StatusBar />
+      <StatusBar style="dark" />
       <FlatList
-          data={posts}
-          ListHeaderComponent={<ProfileHeader user={user} router={router} handleLogout={handleLogout} />}
-          showsVerticalScrollIndicator={false}
-          keyExtractor={(item, index) =>
-            item.id ? item.id.toString() : index.toString()
-          }
-          renderItem={({ item }) => (
+        data={posts}
+        ListHeaderComponent={
+          <ProfileHeader
+            user={user}
+            router={router}
+            handleLogout={handleLogout}
+            fadeAnim={fadeAnim}
+            followersCount={followersCount}
+            followingCount={followingCount}
+          />
+        }
+        showsVerticalScrollIndicator={false}
+        keyExtractor={(item, index) => `${item.id}-${index}`} // Ensure unique keys
+        renderItem={({ item }) => (
+          <Animated.View
+            style={{
+              opacity: fadePostAnim,
+              transform: [
+                {
+                  translateY: fadePostAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [10, 0],
+                  }),
+                },
+              ],
+            }}
+          >
             <PostCard item={item} currentUser={user} router={router} />
-          )}
-          onEndReached={() => {
-            <View className="absolute">
-              
-              </View>
-            getPosts();
-          }}
-          refreshing={refreshing}
-          onRefresh={() => {
-            setPosts([]);
-            getPosts();
-          }}
-          style={{height:hp(50),backgroundColor:'#F5F3FF'}}
-          contentContainerStyle={{ paddingBottom: 20 }}
-          ListFooterComponent={
-            hasMore ? (
-              <View
-                style={{ marginVertical: posts.length == 0 ? 280 : 30}}
-                className="bg-primary-50"
-              >
-                <Loading />
-              </View>
-            ) : (
+          </Animated.View>
+        )}
+        onEndReached={fetchMorePosts}
+        onEndReachedThreshold={0.5}
+        refreshing={refreshing}
+        onRefresh={refreshPosts}
+        contentContainerStyle={{
+          paddingBottom: 20,
+          backgroundColor: "#F5F3FF",
+        }}
+        ListFooterComponent={
+          loading ? (
+            <View className="mt-5">
+              <Loading />
+            </View>
+          ) : (
+            !hasMore && (
               <View className="flex-1 px-5 mt-5">
-                <Text className="font-rubik-semibold text-center">
+                {/* <Text className="font-rubik-semibold text-center">
                   No more posts available...
                 </Text>
                 <Image
@@ -118,364 +188,127 @@ const Profile = () => {
                     borderRadius: 20,
                     marginTop: -40,
                   }}
-                />
+                /> */}
               </View>
             )
-          }
-        />
-      
+          )
+        }
+      />
     </ScreenWrapper>
   );
 };
 
-const ProfileHeader = ({user,router,handleLogout}) =>{
-  const shadowStyle = {
-    shadowColor: "black",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 7,
-  };
-  const handleLocation = async () => {
-    if (!user?.address) {
-      Alert.alert("Hey there!", "Want to edit your location?", [
-        {
-          text: "No",
-        },
-        {
-          onPress: () => router.push("/pages/screens/editProfile"),
-          text: "Yes",
-        },
-      ]);
-    } else {
-      return;
-    }
-  };
-
-  const handleBio = async () => {
-    if (!user?.bio) {
-      Alert.alert("Hey there!", "Want to edit your bio?", [
-        {
-          text: "No",
-        },
-        {
-          onPress: () => router.push("/pages/screens/editProfile"),
-          text: "Yes",
-        },
-      ]);
-    } else {
-      return;
-    }
-  };
+const ProfileHeader = ({
+  user,
+  router,
+  handleLogout,
+  fadeAnim,
+  followersCount,
+  followingCount,
+}) => {
   return (
-    <View className="flex-1 bg-primary-50 px-5">
-        <View className="flex -ml-3 flex-row justify-between items-center">
-          <View className="flex">
-            <BackButton router={router} />
-          </View>
-          <View className="flex-1 flex-row justify-between">
-            <View className="flex-row">
-              <Text className="font-rubik-bold text-3xl">Prof</Text>
-              <Text className="font-rubik-bold text-3xl">ile</Text>
-            </View>
-          </View>
-          <View className="flex flex-row gap-4">
-            <TouchableOpacity onPress={()=>router.push('/screens/menu')}>
-              <Icon name="threeDotsHorizontal" size={hp(4)} />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={handleLogout}>
-              <Icon name="logout" size={hp(4)} color="#F75555" />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <View className="flex flex-row gap-2 items-center justify-center">
-          <Icon name="mail" size={hp(3)} />
-          <Text className="font-rubik-medium text-1xl">{user?.email}</Text>
-        </View>
-
-        <View>
-          <View className="flex justify-center items-center pt-5">
-            <View className="flex flex-row">
-              <Text className="font-rubik-medium text-2xl text-center">
-                What's up{" "}
-              </Text>
-              <Text className="font-rubik-medium text-2xl text-center text-primary-100">
-                {user?.name}?
-              </Text>
-            </View>
-            <Text className="font-rubik-medium text-2xl text-center">
-              Let's roll!
-            </Text>
-          </View>
-
-          <View className="flex flex-row items-center h-fit">
-            {/* Avatar */}
-            <View className="items-center flex-1">
-              <TouchableOpacity>
-                <Avatar
-                  uri={user?.image}
-                  size={hp(15)}
-                  style={{ borderWidth: 5, borderColor: "#4B2C7F" }}
-                />
-              </TouchableOpacity>
-              <TouchableOpacity
-                className="bg-white rounded-full p-2 bottom-16 left-16 mr-2 mt-2"
-                style={shadowStyle}
-                onPress={() => router.push("/pages/screens/editProfile")}
-              >
-                <Icon name="edit" size={hp(2.5)} color="#B73E6D" />
-              </TouchableOpacity>
-            </View>
-
-            {/* User Essential details */}
-            <View className="flex-1 items-center bottom-7">
-              <View className="gap-3">
-                {user && user.phoneNumber && (
-                  <TouchableOpacity
-                    className="flex flex-row gap-2"
-                    onPress={handleBio}
-                  >
-                    <Icon name="call" size={hp(3)} />
-                    <Text className="font-rubik-medium text-1xl">
-                      {user?.phoneNumber || "Add your Contact Number"}
-                    </Text>
-                  </TouchableOpacity>
-                )}
-                {user && user.address && (
-                  <TouchableOpacity
-                    className="flex flex-row gap-2"
-                    onPress={handleLocation}
-                  >
-                    <Icon name="location" size={hp(3)} />
-                    <Text className="font-rubik-medium text-1xl">
-                      {user?.address || "Add Location"}
-                    </Text>
-                  </TouchableOpacity>
-                )}
-                {user && user.bio && (
-                  <TouchableOpacity
-                    className="flex flex-row gap-2"
-                    onPress={handleBio}
-                  >
-                    <Icon name="bio" size={hp(3)} />
-                    <Text className="font-rubik-medium text-1xl">
-                      {user?.bio ||
-                        "Want people to know more about you? ...\nAdd a bio"}
-                    </Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-            </View>
-          </View>
-          
-          
-        </View>
-      </View>
-  )
-}
-
-const UserHeader = () => {
-  return (
-    <ScrollView className="flex-1 bg-primary-50 px-5">
-
-<View className="items-center">
-        <FlatList
-          data={posts}
-          showsVerticalScrollIndicator={false}
-          keyExtractor={(item, index) =>
-            item.id ? item.id.toString() : index.toString()
-          }
-          renderItem={({ item }) => (
-            <PostCard item={item} currentUser={user} router={router} />
-          )}
-          onEndReached={() => {
-            <View className="absolute">
-              
-              </View>
-            getPosts();
+    <Animated.View
+      className="bg-primary-50 pb-5 pt-3"
+      style={{ opacity: fadeAnim }}
+    >
+      <ImageBackground
+        source={require("@/assets/images/bg.png")}
+        style={{
+          height: hp(30),
+          justifyContent: "flex-end",
+          borderTopLeftRadius: 20,
+          borderTopRightRadius: 20,
+        }}
+      >
+        <View
+          className="bg-opacity-50 px-5 py-3"
+          style={{
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            borderTopLeftRadius: 20,
+            borderTopRightRadius: 20,
           }}
-          refreshing={refreshing}
-          onRefresh={() => {
-            setPosts([]);
-            getPosts();
+        >
+          <View className="flex flex-row -m-2">
+            <View className="items-center justify-center">
+              <BackButton router={router} style={{ color: "white" }} />
+            </View>
+            <View className="flex-row items-center justify-center">
+              <Text className="font-rubik-bold text-3xl text-white">Prof</Text>
+              <Text className="font-rubik-bold text-3xl text-white">ile</Text>
+            </View>
+          </View>
+        </View>
+      </ImageBackground>
+
+      <View className="flex-row items-center mt-5 px-5">
+        <Avatar
+          uri={user?.image}
+          size={hp(15)}
+          style={{
+            borderWidth: 4,
+            borderColor: "#4B2C7F",
+            borderRadius: hp(7.5),
           }}
-          style={{height:hp(50)}}
-          contentContainerStyle={{ paddingBottom: 20 }}
-          ListFooterComponent={
-            hasMore ? (
-              <View
-                style={{ marginVertical: posts.length == 0 ? 280 : 30}}
-                className="bg-primary-50"
-              >
-                <Loading />
-              </View>
-            ) : (
-              <View className="flex-1 px-5 mt-5">
-                <Text className="font-rubik-semibold text-center">
-                  No more posts available...
-                </Text>
-                <Image
-                  source={require("@/assets/images/nomoreposts.png")}
-                  transition={100}
-                  contentFit="cover"
-                  style={{
-                    width: "100%",
-                    height: hp(40),
-                    borderRadius: 20,
-                    marginTop: -40,
-                  }}
-                />
-              </View>
-            )
-          }
         />
-      </View>
-      {/* Header */}
-      <View className="flex -ml-3 flex-row justify-between items-center">
-        <View className="flex">
-          <BackButton router={router} />
-        </View>
-        <View className="flex-1 flex-row justify-between">
-          <View className="flex-row">
-            <Text className="font-rubik-bold text-3xl">Prof</Text>
-            <Text className="font-rubik-bold text-3xl">ile</Text>
+        <View className="flex-1 ml-4">
+          <Text className="font-rubik-bold text-xl">{user?.name}</Text>
+          <Text className="font-rubik-medium text-sm text-gray-600">
+            {user?.email}
+          </Text>
+          <Text className="font-rubik-regular text-sm text-gray-600 mt-2">
+            {user?.bio || "Bio not available"}
+          </Text>
+          <Text className="font-rubik-regular text-sm text-gray-600 mt-1">
+            {user?.address || "Address not provided"}
+          </Text>
+          <View className="flex-row mt-2 items-center justify-center gap-10">
+            <TouchableOpacity
+              onPress={() => router.push("pages/screens/followers")}
+            >
+              <View className="flex-col items-center">
+                <Text className="font-rubik-medium text-3xl text-gray-600">
+                  {followersCount}
+                </Text>
+                <Text className="font-rubik-medium text-sm text-gray-600">
+                  Followers
+                </Text>
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => router.push("pages/screens/following")}
+              className="ml-4"
+            >
+              <View className="flex-col items-center">
+                <Text className="font-rubik-medium text-3xl text-gray-600">
+                  {followingCount}
+                </Text>
+                <Text className="font-rubik-medium text-sm text-gray-600">
+                  Following
+                </Text>
+              </View>
+              
+             
+            </TouchableOpacity>
           </View>
-        </View>
-        <View className="flex flex-row gap-4">
-          <TouchableOpacity onPress={()=>router.push('screens/menu')}>
-            <Icon name="threeDotsHorizontal" size={hp(4)} />
-          </TouchableOpacity>
-          {/* <TouchableOpacity onPress={handleLogout}>
-              <Icon name="logout" size={hp(4)} color="#F75555" />
-            </TouchableOpacity> */}
-        </View>
-      </View>
-
-      {/* User Name */}
-      <View className="flex-1 justify-center items-center top-20">
-        <View className="flex flex-row">
-          <Text className="font-rubik-medium text-2xl text-center">
-            What's up{" "}
-          </Text>
-          <Text className="font-rubik-medium text-2xl text-center text-primary-100">
-            {user?.name}?
-          </Text>
-        </View>
-        <Text className="font-rubik-medium text-2xl text-center">
-          Let's roll!
-        </Text>
-      </View>
-
-      <View className="flex-1 flex-row items-center absolute top-44">
-        {/* Avatar */}
-        <View className="items-center flex-1">
-          <TouchableOpacity>
-            <Avatar
-              uri={user?.image}
-              size={hp(15)}
-              style={{ borderWidth: 5, borderColor: "#4B2C7F" }}
-            />
-          </TouchableOpacity>
           <TouchableOpacity
-            className="bg-white rounded-full p-2 bottom-16 left-16 ml-2 mt-2"
-            style={shadowStyle}
+            className="bg-purple-700 p-3 rounded-2xl mt-4"
             onPress={() => router.push("/pages/screens/editProfile")}
           >
-            <Icon name="edit" size={hp(3)} color="#B73E6D" />
+            <Text className="text-white text-center text-sm font-rubik-medium">
+              Edit Profile
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            className="bg-red-500 p-3 rounded-2xl mt-3"
+            onPress={handleLogout}
+          >
+            <Text className="text-white text-center text-sm font-rubik-medium">
+              Logout
+            </Text>
           </TouchableOpacity>
         </View>
-
-        {/* User Essential details */}
-        <View className="flex-1 items-center bottom-7">
-          <View className="gap-3">
-            {user && user.phoneNumber && (
-              <TouchableOpacity
-                className="flex flex-row gap-2"
-                onPress={handleBio}
-              >
-                <Icon name="call" size={hp(3)} />
-                <Text className="font-rubik-medium text-1xl">
-                  {user?.phoneNumber || "Add your Contact Number"}
-                </Text>
-              </TouchableOpacity>
-            )}
-            {user && user.address && (
-              <TouchableOpacity
-                className="flex flex-row gap-2"
-                onPress={handleLocation}
-              >
-                <Icon name="location" size={hp(3)} />
-                <Text className="font-rubik-medium text-1xl">
-                  {user?.address || "Add Location"}
-                </Text>
-              </TouchableOpacity>
-            )}
-            {user && user.bio && (
-              <TouchableOpacity
-                className="flex flex-row gap-2"
-                onPress={handleBio}
-              >
-                <Icon name="bio" size={hp(3)} />
-                <Text className="font-rubik-medium text-1xl">
-                  {user?.bio ||
-                    "Want people to know more about you? ...\nAdd a bio"}
-                </Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        </View>
       </View>
-
-      <View className="top-96 items-center">
-        <FlatList
-          data={posts}
-          showsVerticalScrollIndicator={false}
-          keyExtractor={(item, index) =>
-            item.id ? item.id.toString() : index.toString()
-          }
-          renderItem={({ item }) => (
-            <PostCard item={item} currentUser={user} router={router} />
-          )}
-          onEndReached={() => {
-            getPosts();
-          }}
-          refreshing={refreshing}
-          onRefresh={() => {
-            setPosts([]);
-            getPosts();
-          }}
-          contentContainerStyle={{ paddingBottom: 20 }}
-          ListFooterComponent={
-            hasMore ? (
-              <View
-                style={{ marginVertical: posts.length == 0 ? 280 : 30 }}
-                className="bg-primary-50"
-              >
-                <Loading />
-              </View>
-            ) : (
-              <View className="flex-1 px-5 mt-5">
-                <Text className="font-rubik-semibold text-center">
-                  No more posts available...
-                </Text>
-                <Image
-                  source={require("@/assets/images/nomoreposts.png")}
-                  transition={100}
-                  contentFit="cover"
-                  style={{
-                    width: "100%",
-                    height: hp(40),
-                    borderRadius: 20,
-                    marginTop: -40,
-                  }}
-                />
-              </View>
-            )
-          }
-        />
-      </View>
-    </ScrollView>
+    </Animated.View>
   );
 };
 
