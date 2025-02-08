@@ -1,15 +1,18 @@
 import {
   View,
   Text,
-  TouchableOpacity,
   FlatList,
   Alert,
   Animated,
   ImageBackground,
+  TouchableOpacity,
+  Modal,
+  PanResponder,
+  StyleSheet,
 } from "react-native";
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import ScreenWrapper from "../../../components/ScreenWrapper";
-import { hp } from "../../../helpers/common";
+import { hp, wp } from "../../../helpers/common";
 import { supabase } from "../../../lib/supabase";
 import Avatar from "../../../components/Avatar";
 import { StatusBar } from "expo-status-bar";
@@ -22,7 +25,7 @@ import { useRouter } from "expo-router";
 import { debounce } from "lodash";
 import BackButton from "../../../components/BackButton";
 let limit = 0;
-
+import Icon from "../../../assets/icons";
 const Profile = () => {
   const { user } = useAuth();
   const [hasMore, setHasMore] = useState(true);
@@ -206,6 +209,68 @@ const ProfileHeader = ({
   followersCount,
   followingCount,
 }) => {
+  const [userData, setUserData] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("users")
+          .select("account_visibility")
+          .eq("id", user.id)
+          .single(); // Assuming user has a unique ID
+
+        if (error) throw error;
+        setUserData(data);
+      } catch (error) {
+        console.error("Error fetching user data:", error.message);
+      }
+    };
+
+    fetchUserData();
+  }, [user.id]);
+
+  const toggleAccountVisibility = async () => {
+    if (!userData) {
+      console.error("User data is not available yet.");
+      return;
+    }
+
+    try {
+      const newVisibility =
+        userData.account_visibility === "public" ? "private" : "public";
+      await supabase
+        .from("users")
+        .update({ account_visibility: newVisibility })
+        .eq("id", user.id);
+      setUserData((prev) => ({ ...prev, account_visibility: newVisibility }));
+      
+      Alert.alert("Account visibility updated!",`Your account is now ${newVisibility}`);
+    } catch (error) {
+      console.error("Error updating visibility:", error.message);
+    }
+  };
+
+  // Ensure that userData is available before rendering
+  if (!userData) {
+    return (
+      <View className="flex-1 bg-primary-50 items-center justify-center">
+        
+      </View>
+    )
+  }
+  const panResponder = PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder: () => true,
+    onPanResponderMove: (e, gestureState) => {
+      // Detect the swipe down gesture
+      if (gestureState.dy > 50) {
+        // swipe down threshold
+        setModalVisible(false);
+      }
+    },
+    onPanResponderRelease: () => {},
+  });
   return (
     <Animated.View
       className="bg-primary-50 pb-5 pt-3"
@@ -228,19 +293,29 @@ const ProfileHeader = ({
             borderTopRightRadius: 20,
           }}
         >
-          <View className="flex flex-row -m-2">
-            <View className="items-center justify-center">
-              <BackButton router={router} style={{ color: "white" }} />
+          <View className=" -m-2 flex-row items-center justify-between">
+            <View className="flex flex-row">
+              <View className="items-center justify-center">
+                <BackButton router={router} style={{ color: "white" }} />
+              </View>
+              <View className="flex-row items-center justify-center">
+                <Text className="font-rubik-bold text-3xl text-white">
+                  Prof
+                </Text>
+                <Text className="font-rubik-bold text-3xl text-white">ile</Text>
+              </View>
             </View>
-            <View className="flex-row items-center justify-center">
-              <Text className="font-rubik-bold text-3xl text-white">Prof</Text>
-              <Text className="font-rubik-bold text-3xl text-white">ile</Text>
+            <View className="p-5">
+              <TouchableOpacity onPress={() => setModalVisible(true)}>
+                <Icon name="settings" color={"white"} size={32} />
+              </TouchableOpacity>
             </View>
           </View>
         </View>
       </ImageBackground>
 
       <View className="flex-row items-center mt-5 px-5">
+
         <Avatar
           uri={user?.image}
           size={hp(15)}
@@ -286,8 +361,6 @@ const ProfileHeader = ({
                   Following
                 </Text>
               </View>
-              
-             
             </TouchableOpacity>
           </View>
           <TouchableOpacity
@@ -307,9 +380,75 @@ const ProfileHeader = ({
             </Text>
           </TouchableOpacity>
         </View>
+
+        <Modal
+          visible={modalVisible}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={() => setModalVisible(false)}
+        >
+          <View
+            className="flex-1 justify-end"
+            style={styles.modalWrapper}
+            {...panResponder.panHandlers}
+          >
+            <View style={styles.modalContent}>
+              <View className=" rounded-full items-center mb-5">
+                <Image
+                  source={require("@/assets/images/bar.png")}
+                  transition={100}
+                  contentFit="cover"
+                  style={{
+                    width: "10%",
+                    height: hp(0.5),
+                  }}
+                />
+              </View>
+              <View className="flex-row items-center flex justify-between">
+              <View>
+                <Text className="font-rubik-semibold" style={{ fontSize: 18 }}>
+                  Account visibility
+                </Text>
+              </View>
+              <Text className="text-primary-1000 font-rubik-bold">
+                  {userData.account_visibility === "public"
+                    ? "Public"
+                    : "Private"}
+                </Text>
+              </View>
+              <View>
+            <TouchableOpacity
+                onPress={toggleAccountVisibility}
+                
+              >
+                <Text className="text-primary-1000 font-rubik-bold">
+                  {userData.account_visibility === "public"
+                    ? "Switch to Private"
+                    : "Switch to Public"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+            </View>
+            
+          </View>
+        </Modal>
       </View>
     </Animated.View>
   );
 };
+const styles = StyleSheet.create({
+  modalWrapper: {
+    justifyContent: "flex-end",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.4)",
+    padding: 15,
+  },
+  modalContent: {
+    backgroundColor: "#fff",
+    width: wp(100),
+    padding: 25,
+    borderRadius: 10,
+  },
+});
 
 export default Profile;

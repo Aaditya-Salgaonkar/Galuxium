@@ -50,7 +50,7 @@ const TabsLayout = () => {
         }}
       />
 
-      <Tabs.Screen
+      {/* <Tabs.Screen
         name="chat"
         options={{
           title: "Chat",
@@ -59,7 +59,7 @@ const TabsLayout = () => {
             <TabIcon name="chat" focused={focused} />
           ),
         }}
-      />
+      /> */}
 
       <Tabs.Screen
         name="postScreen"

@@ -5,6 +5,8 @@ import {
   Modal,
   TouchableOpacity,
   Alert,
+  StyleSheet,
+  PanResponder
 } from "react-native";
 import React, { useEffect, useRef, useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -15,6 +17,7 @@ import {
   removeComment,
   removePost,
 } from "../../../services/postService";
+import MenuOption from "../../../components/MenuOption";
 import { useAuth } from "../../../context/AuthContext";
 import { wp, hp } from "@/helpers/common";
 import Loading from "../../../components/Loading";
@@ -28,8 +31,9 @@ import { createNotification } from "../../../services/NotificationService";
 import { getUserData } from "@/services/userService";
 const Details = () => {
   const { postId, commentId } = useLocalSearchParams();
-  const { user } = useAuth();
 
+  const { user } = useAuth();
+  const [modalVisible, setModalVisible] = useState(true);
   const router = useRouter();
   const [startLoading, setStartLoading] = useState(true);
   const inputRef = useRef(null);
@@ -39,42 +43,14 @@ const Details = () => {
     id: postId,
     comments: [],
   });
-
-  // const handleNewComment = async (payload) => {
-  //   console.log("Got new comment", payload.new);
-  //   console.log("New comment payload:", payload);
-
-  //   if (payload.new) {
-  //     let newComment = { ...payload.new };
-  //     let res = await getUserData(newComment.userId);
-  //     if (res.success) {
-  //       newComment.user = res.data;
-  //     } else {
-  //       console.error("Failed to fetch user data:", res.msg);
-  //       newComment.user = {};
-  //     }
-
-  //     setPost((prevPost) => {
-  //       const updatedPost = {
-  //         ...prevPost,
-  //         comments: [newComment, ...(prevPost.comments || [])],
-  //       };
-  //       console.log("Updated post state:", updatedPost);
-  //       return updatedPost;
-  //     });
-  //   }
-  // };
   const handleNewComment = async (payload) => {
-    console.log("Received new comment payload:", payload);
 
     if (payload.new) {
       try {
         let newComment = { ...payload.new };
-        console.log("Processing new comment:", newComment);
 
         const res = await getUserData(newComment.userId);
         if (res.success) {
-          console.log("Fetched user data:", res.data);
           newComment.user = res.data; // Attach user data
         } else {
           console.error("Failed to fetch user data:", res.msg);
@@ -82,12 +58,10 @@ const Details = () => {
         }
 
         setPost((prevPost) => {
-          console.log("Previous post state:", prevPost);
           const updatedPost = {
             ...prevPost,
             comments: [newComment, ...(prevPost.comments || [])],
           };
-          console.log("Updated post state:", updatedPost);
           return updatedPost;
         });
       } catch (error) {
@@ -123,7 +97,6 @@ const Details = () => {
   const getPostDetails = async () => {
     let res = await fetchPostDetails(postId);
     if (res.success) {
-      console.log("Fetched post data:", res.data); // Ensure data is correct here
       setPost(res.data);
     } else {
       console.error("Error fetching post details:", res.msg);
@@ -146,7 +119,7 @@ const Details = () => {
         let notify = {
           senderId: user.id,
           receiverId: post.userId,
-          title: "Commented on your post",
+          title: "Post Comment",
           data: JSON.stringify({ postId: post.id, commentId: res?.data?.id }),
         };
         createNotification(notify);
@@ -160,7 +133,6 @@ const Details = () => {
 
   const onDeleteComment = async (comment) => {
     let res = await removeComment(comment?.id);
-    console.log("Comment res:", res);
     if (res.success) {
       setPost((prevPost) => {
         let updatedPost = { ...prevPost };
@@ -182,11 +154,11 @@ const Details = () => {
       Alert.alert("Post", res.msg);
     }
   };
-  // const onEditPost = async (item) => {
-  //   router.back();
-  //   router.push({pathname:'pages/screens/postScreen',params:{...item}});
+  const onEditPost = async (item) => {
+    router.back();
+    router.push({pathname:'pages/screens/postScreen',params:{...item}});
     
-  // };
+  };
 
   if (startLoading) {
     return (
@@ -203,13 +175,36 @@ const Details = () => {
       </View>
     );
   }
+  // PanResponder for swipe down gesture
+  const panResponder = PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder: () => true,
+    onPanResponderMove: (e, gestureState) => {
+      // Detect the swipe down gesture
+      if (gestureState.dy > 50) { // swipe down threshold
+        setModalVisible(false);
+      }
+    },
+    onPanResponderRelease: () => {},
+  });
 
   return (
     <View className="flex-1 bg-accent-100">
-      <View className=" flex flex-row items-center top-safe-offset-1">
-        <BackButton router={router} />
-        <Text className="font-rubik-semibold">Go Back</Text>
-      </View>
+      {/* Modal */}
+      <Modal
+          visible={modalVisible}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={() => setModalVisible(false)}
+        >
+          <View
+            className="flex-1 justify-end"
+            style={styles.modalWrapper}
+            {...panResponder.panHandlers}
+          >
+            <View style={styles.modalContent}>
+           
+    
       <View className="top-safe-offset-1">
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -219,23 +214,7 @@ const Details = () => {
         >
           {post ? (
             <View className="flex-1 items-center justify-center ">
-              <PostCard
-                item={{
-                  ...post,
-                  comments: [{ count: post?.comments?.length }],
-                }}
-                currentUser={user}
-                router={router}
-                hasShadow={false}
-                showMoreIcon={false}
-                showDelete={false}
-                onDelete={onDeletePost}
-                onEdit={onEditPost}
-                style={{
-                  left: 0,
-                  right: 0,
-                }}
-              />
+              
 
               <View className="flex-1 flex-row p-10">
                 {loading ? (
@@ -272,6 +251,11 @@ const Details = () => {
             </View>
           )}
 
+
+          
+
+
+
           {/* comment list */}
           <View className="flex-1 items-center mb-safe-offset-40">
             {post?.comments?.map((comment) => (
@@ -293,8 +277,30 @@ const Details = () => {
           </View>
         </ScrollView>
       </View>
+           
+            
+              
+            </View>
+          </View>
+        </Modal>
+      
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  modalWrapper: {
+    justifyContent: "flex-end",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.4)",
+    padding: 15,
+  },
+  modalContent: {
+    backgroundColor: "#fff",
+    width: wp(100),
+    padding: 20,
+    borderRadius: 10,
+  },
+});
 
 export default Details;

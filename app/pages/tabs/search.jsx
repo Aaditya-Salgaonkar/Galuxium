@@ -75,7 +75,7 @@ const SearchScreen = () => {
       <StatusBar />
       <View className="flex-1 bg-primary-50 px-5">
         {/* Header */}
-        <View className="flex mt-4 flex-row justify-between">
+        <View className="flex mt-5 flex-row justify-between">
           <Text className="font-rubik-bold text-3xl">Search</Text>
          
         </View>

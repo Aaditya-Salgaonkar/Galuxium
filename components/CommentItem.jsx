@@ -36,7 +36,7 @@ const CommentItem = ({
     <View>
       {highlight ? (
         <View
-          className="bg-white p-5 rounded-3xl items-center m-2"
+          className="bg-primary-50 my-2 p-3 rounded-2xl flex-row gap-5 items-center"
           style={shadowStyle}
         >
           <View style={{ width: wp(85) }} className="flex-row gap-5">
@@ -68,9 +68,10 @@ const CommentItem = ({
         </View>
       ) : (
         <View
-          className="bg-primary-50 p-5 rounded-3xl flex-row gap-5 items-center m-2"
+          className="bg-primary-50 py-5 flex-row gap-5 items-center border-b-2 border-primary-1300"
           style={{ width: wp(90) }}
         >
+      
           <Avatar uri={item?.user?.image} />
           <View>
             <View className="flex flex-row">

@@ -20,7 +20,6 @@ import { updateUser } from "../../../services/userService";
 import Input from "@/components/Input";
 import Button from "../../../components/Button";
 import * as ImagePicker from "expo-image-picker";
-import * as FileSystem from "expo-file-system";
 const Edit = () => {
   const router = useRouter();
   const { user: currentUser, setUserData } = useAuth();
@@ -53,72 +52,35 @@ const Edit = () => {
   };
 
   const pickImage = async () => {
-    // console.log('Error',error.message);
     let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"], //can add video also
+      mediaTypes: ["images"],
       allowsEditing: true,
       aspect: [1, 1],
       quality: 1,
     });
-    
+
     if (!result.canceled) {
-      setUser({ ...user, image: result.assets[0] }); //result.assets[0].uri was creating the problem which was not letting the image to get uploaded to supabase
+      setUser({ ...user, image: result.assets[0] });
     }
   };
 
-  // const onSubmit = async () => {
-  //   let userData = { ...user };
-  //   let { name, phoneNumber, address, image, bio } = userData;
-  //   setLoading(true);
-
-  //   //image loading
-  //   if (typeof image == "object") {
-  //     //upload image
-  //     let imageRes = await uploadFile("profiles", image?.uri, true);
-  //     console.log("Response", imageRes);
-  //     if (imageRes.success) {
-  //       userData.image = imageRes.data;
-  //       console.log("Image uploaded", error.message);
-  //     } else {
-  //       userData.image = null;
-  //       console.log("Image not uploaded", error.message);
-  //     }
-  //   }
-  //   //update user
-  //   const res = await updateUser(currentUser?.id, userData);
-
-  //   setLoading(false);
-
-  //   //updating data for local usage
-  //   if (res.success) {
-  //     setUserData({ ...currentUser, ...userData });
-  //     router.back();
-  //   }
-  // };
-  
   const onSubmit = async () => {
     let userData = { ...user };
-    console.log("User Data : ",userData)
     let { name, address, image, bio } = userData;
     setLoading(true);
-  
-    // Image handling
+
     if (typeof image === "object") {
       let imageRes = await uploadFile("profiles", image.uri, true);
-      console.log("Image Upload Response:", imageRes);
       if (imageRes.success) {
-        userData.image = imageRes.data;  // Successfully uploaded image
+        userData.image = imageRes.data;
       } else {
         userData.image = null;
-        console.log("Image upload failed", imageRes.error.message);  // Correct error logging
       }
     }
-  
-    // Update user data
+
     const res = await updateUser(currentUser?.id, userData);
     setLoading(false);
-  
-    // Local state update
+
     if (res.success) {
       setUserData({ ...currentUser, ...userData });
       router.back();
@@ -126,11 +88,10 @@ const Edit = () => {
       console.log("Error updating user data", res.error);
     }
   };
-  let imageSource = 
-  user.image && typeof user.image === "object" 
-    ? { uri: user.image.uri } 
-    : getUserImageSource(user.image);
-
+  let imageSource =
+    user.image && typeof user.image === "object"
+      ? { uri: user.image.uri }
+      : getUserImageSource(user.image);
 
   return (
     <ScreenWrapper>
@@ -148,36 +109,18 @@ const Edit = () => {
           className="bg-primary-50"
         >
           {/* Header */}
-           <View className="flex -ml-3 flex-row justify-between items-center"> 
-                          <View className="flex">
-                            <BackButton router={router} />
-                          </View>
-                          <View className="flex-1 flex-row justify-between">
-                          <View className="flex-row">
-                          <Text className="font-rubik-bold text-3xl">Edit Prof</Text>
-                          <Text className="font-rubik-bold text-3xl">ile</Text>
-                          </View>
-                          </View>
-                          
-                          </View>
-          {/*old header not responsive enough
-           <View className="">
-            <View className="-ml-5">
+          <View className="flex -ml-3 flex-row justify-between items-center">
+            <View className="flex">
               <BackButton router={router} />
             </View>
-
-            <View className="flex flex-row absolute mt-4 ml-10">
-              <Text className="font-rubik-bold text-3xl">Edit Prof</Text>
-              <Text className="font-rubik-bold text-3xl">ile</Text>
-              <View className="flex gap-5 flex-row ml-36">
-                <TouchableOpacity>
-                  <Icon name="threeDotsHorizontal" size={hp(4)} />
-                </TouchableOpacity>
+            <View className="flex-1 flex-row justify-between">
+              <View className="flex-row">
+                <Text className="font-rubik-bold text-3xl">Edit Prof</Text>
+                <Text className="font-rubik-bold text-3xl">ile</Text>
               </View>
             </View>
-          </View> */}
+          </View>
 
-          {/* Profile Image */}
           <View className="items-center mt-8">
             <TouchableOpacity>
               <Image
@@ -194,7 +137,6 @@ const Edit = () => {
             </TouchableOpacity>
           </View>
 
-          {/* Input Fields */}
           <View className="flex">
             <Text className="font-rubik-medium pl-7 text-secondary-200">
               Please update your profile details
@@ -218,9 +160,7 @@ const Edit = () => {
                   icon={<Icon name="bio" />}
                   placeholder="Enter your bio"
                   value={user.bio}
-                  onChangeText={(value) =>
-                    setUser({ ...user, bio: value })
-                  }
+                  onChangeText={(value) => setUser({ ...user, bio: value })}
                   containerStyles={{
                     borderWidth: 1,
                     borderColor: "#F8D7A4",
@@ -241,16 +181,16 @@ const Edit = () => {
                   }}
                 />
               </View>
-              
-                <View className="mt-60 items-center">
-                  <Button
-                    title={"Update"}
-                    loading={loading}
-                    onPress={onSubmit}
-                    buttonStyle={{
-                      width:wp(70)
-                    }}
-                  />
+
+              <View className="mt-60 items-center">
+                <Button
+                  title={"Update"}
+                  loading={loading}
+                  onPress={onSubmit}
+                  buttonStyle={{
+                    width: wp(70),
+                  }}
+                />
               </View>
             </View>
           </View>

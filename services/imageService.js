@@ -45,14 +45,12 @@ export const downloadFile = async (fileUrl) => {
   
       // Generate a local file path using the file's name
       const localFilePath = getLocalFilePath(fileUrl);
-      console.log("Downloading file to:", localFilePath);
   
       // Download the file and get its local URI
       const { uri } = await FileSystem.downloadAsync(fileUrl, localFilePath);
   
       // Check if the download was successful
       if (uri) {
-        console.log("File downloaded successfully to:", uri);
         return uri;
       } else {
         console.error("File download failed, no URI returned.");

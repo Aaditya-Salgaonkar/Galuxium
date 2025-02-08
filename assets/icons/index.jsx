@@ -28,11 +28,13 @@ import ArrowRight from './ArrowRight';
 import About from './About';
 import Favourites from './Favourites';
 import Cross from './Cross';
+import Settings from './Settings'
 const icons = {
   home:Home,
   mail: Mail,
   cross:Cross,
   lock: Lock,
+  settings:Settings,
   user: User,
   heart: Heart,
   arrowright:ArrowRight,

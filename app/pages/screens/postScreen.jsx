@@ -20,9 +20,8 @@ import { createOrUpdatePost } from "../../../services/postService";
 const NewPost = () => {
   const post = useLocalSearchParams();
 
-console.log('Post',post)
+
   const { user} = useAuth();
-  console.log("User",user)
   const bodyRef = useRef("");
   const editorRef = useRef(null);
   const router = useRouter();
@@ -32,7 +31,6 @@ console.log('Post',post)
   useEffect(()=>{
     if(post && post.id){
       bodyRef.current=post.body;
-      console.log("BodyRef",bodyRef)
       setFile(post.file||null);
       setTimeout(() => {
         
@@ -41,7 +39,7 @@ console.log('Post',post)
       }, 300);
 
     }
-  },[post])
+  },[])
 
   const onPick = async (isImage) => {
     let mediaConfig = {
@@ -60,7 +58,7 @@ console.log('Post',post)
       };
     }
     let result = await ImagePicker.launchImageLibraryAsync(mediaConfig);
-    // console.log('file',result.assets[0]);
+
     if (!result.canceled) {
       setFile(result.assets[0]);
     }
@@ -105,7 +103,7 @@ console.log('Post',post)
    //create post
    setLoading(true);
    let res= await createOrUpdatePost(data);
-   console.log("Res",res)
+
    setLoading(false);
    if(res.success){
     setFile(null);
@@ -123,7 +121,7 @@ console.log('Post',post)
       <StatusBar />
       {/* Header */}
       <View className="flex-1 bg-primary-50 px-5">
-        <View className="flex flex-row justify-between items-center mt-4">
+        <View className="flex flex-row justify-between items-center mt-3">
           <View className="flex">
             <BackButton router={router} />
           </View>

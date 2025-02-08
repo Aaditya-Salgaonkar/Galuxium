@@ -20,7 +20,6 @@ import { createOrUpdatePost } from "../../../services/postService";
 const NewPost = () => {
   const post = useLocalSearchParams();
 
-console.log('Post',post)
   const { user} = useAuth();
   const bodyRef = useRef("");
   const editorRef = useRef(null);
@@ -58,7 +57,7 @@ console.log('Post',post)
       };
     }
     let result = await ImagePicker.launchImageLibraryAsync(mediaConfig);
-    // console.log('file',result.assets[0]);
+
     if (!result.canceled) {
       setFile(result.assets[0]);
     }
@@ -119,7 +118,7 @@ console.log('Post',post)
       <StatusBar />
       {/* Header */}
       <View className="flex-1 bg-primary-50 px-5">
-        <View className="flex mt-4 flex-row justify-between items-center">
+        <View className="flex mt-5 flex-row justify-between items-center">
           <View className="flex">
             {/* <BackButton router={router} /> */}
           </View>

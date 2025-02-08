@@ -1,102 +1,138 @@
 import { supabase } from "../lib/supabase";
 
+// Fetch users following the given user
 export const getFollowers = async (userId) => {
-    try {
-        const { data, error } = await supabase
-            .from("followers")
-            .select(
-                `
-                follower_id,
-                users!followers_follower_id_fkey (
-                    id, name, image, bio, is_verified, last_active
-                )
-            `
-            )
-            .eq("followed_id", userId);
+  try {
+    // Step 1: Fetch follower ids
+    const { data: followerIds, error: followersError } = await supabase
+      .from("followers")
+      .select("follower_id")
+      .eq("followed_id", userId);
 
-        if (error) {
-            return { success: false, msg: error?.message };
-        }
-        return { success: true, data };
-    } catch (error) {
-        console.log("Error fetching followers:", error);
-        return { success: false, msg: error.message };
+    if (followersError) throw followersError;
+
+    // Step 2: Fetch user details for each follower
+    if (followerIds.length > 0) {
+      const followerIdsList = followerIds.map(f => f.follower_id);
+
+      const { data: users, error: usersError } = await supabase
+        .from("users")
+        .select("id, name, bio, image, is_verified")
+        .in("id", followerIdsList);  // Use the 'in' operator to fetch users by their ids
+
+      if (usersError) throw usersError;
+
+      // Combine the followers' ids with their user data
+      const followersWithDetails = followerIds.map(f => {
+        const user = users.find(u => u.id === f.follower_id);
+        return { ...f, users: user };
+      });
+
+      return followersWithDetails;
+    } else {
+      return [];
     }
+
+  } catch (error) {
+    console.error("Error fetching followers:", error.message);
+    return [];
+  }
 };
+
 
 export const getFollowing = async (userId) => {
-    try {
-        const { data, error } = await supabase
-            .from("followers")
-            .select(
-                `
-                followed_id,
-                users!followers_followed_id_fkey (
-                    id, name, image, bio, is_verified, last_active
-                )
-            `
-            )
-            .eq("follower_id", userId);
+  if (!userId) {
+    console.error("getFollowing called with undefined userId");
+    return [];
+  }
 
-        if (error) {
-            return { success: false, msg: error?.message };
-        }
-        return { success: true, data };
-    } catch (error) {
-        console.log("Error fetching following list:", error);
-        return { success: false, msg: error.message };
-    }
+  try {
+    // Step 1: Fetch followed user IDs
+    const { data: followingIds, error: followingError } = await supabase
+      .from("followers")
+      .select("followed_id")
+      .eq("follower_id", userId);
+
+    if (followingError) throw followingError;
+    if (!followingIds || followingIds.length === 0) return [];
+
+    // Extract followed IDs correctly
+    const followingIdsList = followingIds.map(f => f.followed_id).filter(id => id); // Ensure no undefined values
+
+    // Step 2: Fetch user details
+    const { data: users, error: usersError } = await supabase
+      .from("users")
+      .select("id, name, bio, image, is_verified")
+      .in("id", followingIdsList);
+
+    if (usersError) throw usersError;
+
+    // Combine user data with followed IDs
+    const followingsWithDetails = followingIds.map(f => {
+      const user = users.find(u => u.id === f.followed_id);
+      return user ? { ...f, users: user } : null;
+    }).filter(Boolean); // Remove null values
+
+    return followingsWithDetails;
+  } catch (error) {
+    console.error("Error fetching followings:", error.message);
+    return [];
+  }
 };
 
-export const followUser = async (followerId, followedId) => {
-    try {
-        const { error } = await supabase.from("followers").insert({
-            follower_id: followerId,
-            followed_id: followedId,
-        });
 
-        if (error) {
-            return { success: false, msg: error?.message };
-        }
-        return { success: true, msg: "User followed successfully" };
-    } catch (error) {
-        console.log("Error following user:", error);
-        return { success: false, msg: error.message };
-    }
+
+// Check if a user follows another
+export const isFollowing = async (userId, otherUserId) => {
+  try {
+    const { data, error } = await supabase
+      .from("followers")
+      .select("*")
+      .or(`follower_id.eq.${userId},followed_id.eq.${otherUserId}`)
+      .single();
+
+    if (error && error.code !== "PGRST116") throw error;
+    return !!data;
+  } catch (error) {
+    console.error("Error checking following status:", error.message);
+    return false;
+  }
 };
 
-export const unfollowUser = async (followerId, followedId) => {
-    try {
-        const { error } = await supabase
-            .from("followers")
-            .delete()
-            .eq("follower_id", followerId)
-            .eq("followed_id", followedId);
+// Send follow request
+export const sendFollowRequest = async (followerId, followedId) => {
+  try {
+    const { data, error } = await supabase
+      .from("follow_requests")
+      .insert([{ follower_id: followerId, followed_id: followedId }]);
 
-        if (error) {
-            return { success: false, msg: error?.message };
-        }
-        return { success: true, msg: "User unfollowed successfully" };
-    } catch (error) {
-        console.log("Error unfollowing user:", error);
-        return { success: false, msg: error.message };
-    }
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error("Error sending follow request:", error.message);
+    return null;
+  }
 };
 
-export const isMutualFollow = async (userId, otherUserId) => {
-    try {
-        const { data, error } = await supabase
-            .from("followers")
-            .select("id")
-            .eq("follower_id", otherUserId)
-            .eq("followed_id", userId);
+// Approve follow request
+export const approveFollowRequest = async (requestId, followerId, followedId) => {
+  try {
+    await supabase.from("followers").insert([{ follower_id: followerId, followed_id: followedId }]);
+    await supabase.from("follow_requests").delete().eq("id", requestId);
+    return true;
+  } catch (error) {
+    console.error("Error approving follow request:", error.message);
+    return false;
+  }
+};
 
-        if (error) {
-            return { success: false, msg: error?.message };
-        }
-        return { success: true, isMutual: data.length > 0 };
-    } catch (error) {
-        console.log("Error checking mutual follow:", error);
-        return { success: false, msg: error.message };
-    }
+// Reject follow request
+export const rejectFollowRequest = async (requestId) => {
+  try {
+    await supabase.from("follow_requests").delete().eq("id", requestId);
+    return true;
+  } catch (error) {
+    console.error("Error rejecting follow request:", error.message);
+    return false;
+  }
 };

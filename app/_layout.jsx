@@ -35,7 +35,7 @@ const MainLayout = () => {
 
   useEffect(()=>{
     supabase.auth.onAuthStateChange((_event,session)=>{
-      console.log('session user : ',session?.user?.id);
+      console.log('Session user : ',session?.user?.id);
       
       if(session) {
         //setAUth
@@ -64,19 +64,7 @@ const MainLayout = () => {
     <Stack 
     screenOptions={{
       headerShown:false,
-      presentation: 'modal', 
-    }}>
-
-
-<Stack.Screen
-    name="pages/screens/postDetails"
-    options={{
-      presentation:'modal',
-      headerShown: false,
-      cardStyle: { height: Dimensions.get('window').height * 0.75, padding: 20 },
-    }}
-    />
-    </Stack>
+    }}/>
   )
 }
 
